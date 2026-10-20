@@ -1,5 +1,5 @@
 [package]
-name = "counter_program"
+name = "profile_program"
 version = "0.1.0"
 description = "Created with Anchor"
 edition.workspace = true
@@ -7,7 +7,7 @@ rust-version.workspace = true
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "counter_program"
+name = "profile_program"
 
 [features]
 default = []
@@ -24,9 +24,9 @@ custom-panic = []
 anchor-lang = "1.2.0"
 
 [dev-dependencies]
-litesvm = "0.10.0"
-solana-message = "3.0.1"
-solana-transaction = "3.0.2"
+litesvm = "0.18.1"
+solana-message = "4"
+solana-transaction = "4"
 solana-signer = "3.0.0"
 solana-keypair = "3.0.1"
 

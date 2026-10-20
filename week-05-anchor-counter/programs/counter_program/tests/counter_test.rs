@@ -103,6 +103,8 @@ fn test_increment() {
             svm.latest_blockhash(),
         );
         svm.send_transaction(tx).unwrap();
+        // Одинаковые транзакции с тем же blockhash отклоняются как дубликаты
+        svm.expire_blockhash();
 
         println!("✅ Increment #{} passed!", i);
     }

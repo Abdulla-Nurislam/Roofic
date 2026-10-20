@@ -2,3 +2,10 @@
 target/
 node_modules/
 *.log
+.state/
+test-ledger/
+.next/
+.env*.local
+__pycache__/
+.ipynb_checkpoints/
+.venv/
