@@ -15,6 +15,7 @@ import {
   useProgram,
   useReadonlyProgram,
 } from "@/lib/program";
+import { useSolUsd } from "@/lib/pyth";
 
 type Property = ProgramAccount<IdlAccounts<RooficMvp>["property"]>;
 type Position = IdlAccounts<RooficMvp>["position"];
@@ -24,6 +25,11 @@ export default function Home() {
   const { publicKey } = useWallet();
   const program = useProgram();
   const reader = useReadonlyProgram();
+  const solUsd = useSolUsd();
+  const usd = (lamports: BN | number): string | null =>
+    solUsd === null
+      ? null
+      : `≈ $${((Number(lamports.toString()) / 1e9) * solUsd).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [positions, setPositions] = useState<Record<string, Position>>({});
@@ -97,8 +103,8 @@ export default function Home() {
         </p>
         <div className="stats">
           <div className="glass stat"><div className="stat-label">Объектов</div><div className="stat-value">{stats.count}</div></div>
-          <div className="glass stat"><div className="stat-label">Привлечено</div><div className="stat-value">{sol(stats.raised)} SOL</div></div>
-          <div className="glass stat"><div className="stat-label">Выплачено аренды</div><div className="stat-value">{sol(stats.rent)} SOL</div></div>
+          <div className="glass stat"><div className="stat-label">Привлечено</div><div className="stat-value">{sol(stats.raised)} SOL</div>{usd(stats.raised) && <div className="stat-sub">{usd(stats.raised)}</div>}</div>
+          <div className="glass stat"><div className="stat-label">Выплачено аренды</div><div className="stat-value">{sol(stats.rent)} SOL</div>{usd(stats.rent) && <div className="stat-sub">{usd(stats.rent)}</div>}</div>
           <div className="glass stat"><div className="stat-label">Мои позиции</div><div className="stat-value">{stats.investors}</div></div>
         </div>
       </section>
@@ -130,6 +136,7 @@ export default function Home() {
               p={p}
               position={positions[p.publicKey.toBase58()]}
               me={publicKey}
+              usd={usd}
               busy={busy}
               onBuy={(shares) =>
                 run(`buy-${p.publicKey}`, `Куплено долей: ${shares}`, () =>
@@ -209,10 +216,11 @@ function CreateProperty({ busy, onSubmit }: {
   );
 }
 
-function PropertyCard({ p, position, me, busy, onBuy, onDeposit, onClaim }: {
+function PropertyCard({ p, position, me, usd, busy, onBuy, onDeposit, onClaim }: {
   p: Property;
   position?: Position;
   me: PublicKey | null;
+  usd: (lamports: BN | number) => string | null;
   busy: string | null;
   onBuy: (shares: number) => void;
   onDeposit: (sol: number) => void;
@@ -244,8 +252,8 @@ function PropertyCard({ p, position, me, busy, onBuy, onDeposit, onClaim }: {
       </div>
 
       <div className="kv">
-        <div><span>Цена доли</span><strong>{sol(a.pricePerShare)} SOL</strong></div>
-        <div><span>Аренда выплачено</span><strong>{sol(a.totalRentDeposited)} SOL</strong></div>
+        <div><span>Цена доли</span><strong>{sol(a.pricePerShare)} SOL</strong>{usd(a.pricePerShare) && <small className="usd">{usd(a.pricePerShare)}</small>}</div>
+        <div><span>Аренда выплачено</span><strong>{sol(a.totalRentDeposited)} SOL</strong>{usd(a.totalRentDeposited) && <small className="usd">{usd(a.totalRentDeposited)}</small>}</div>
       </div>
 
       {position && claimable && (

@@ -133,3 +133,6 @@ label.field { display: flex; flex-direction: column; gap: 6px; color: var(--mute
 .footer { color: var(--muted); font-size: 0.85rem; padding: 48px 0 32px; text-align: center; }
 
 .wallet-adapter-button-trigger { background: var(--grad) !important; color: #070912 !important; border-radius: 12px !important; font-family: inherit !important; }
+
+.stat-sub { color: var(--teal); font-size: 0.85rem; margin-top: 2px; }
+.usd { display: block; color: var(--teal); font-size: 0.75rem; margin-top: 2px; }
