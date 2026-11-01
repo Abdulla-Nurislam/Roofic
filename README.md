@@ -24,7 +24,7 @@
 | 10 | RPC, API и blockchain data | РО3 | [week-10-dashboard](week-10-dashboard/) | ✅ |
 | 11 | CPI и composable applications | РО3 | [week-11-cpi](week-11-cpi/) | ✅ |
 | 12 | Security & Exploit Lab | РО4 | [week-12-security-lab](week-12-security-lab/) | ✅ |
-| 13 | RWA, Stablecoins и платежи | РО4 | [week-13-rwa-design](week-13-rwa-design/) | ⏳ |
+| 13 | RWA, Stablecoins и платежи | РО4 | [week-13-rwa-design](week-13-rwa-design/) | ✅ |
 | 14 | Capstone Build Week | РО5 | [capstone](capstone/) | ⏳ |
 
 ## Команда
