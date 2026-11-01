@@ -18,14 +18,14 @@
 | 4 | Первая Solana Program (native) | РО2 | [week-04-native-program](week-04-native-program/) | ✅ |
 | 5 | Anchor Framework: Counter | РО2 | [week-05-anchor-counter](week-05-anchor-counter/) | ✅ |
 | 6 | Accounts, PDAs: on-chain профиль | РО2 | [week-06-pda-profile](week-06-pda-profile/) | ✅ |
-| 7 | SPL Tokens & Token Extensions | РО2 | [week-07-spl-token](week-07-spl-token/) | ⏳ |
-| 8 | РК1 · Build Sprint: первый Web3 MVP | РО3 | [week-08-mvp](week-08-mvp/) | ⏳ |
-| 9 | DeFi на Solana | РО3 | [week-09-defi](week-09-defi/) | ⏳ |
+| 7 | SPL Tokens & Token Extensions | РО2 | [week-07-spl-token](week-07-spl-token/) | ✅ |
+| 8 | РК1 · Build Sprint: первый Web3 MVP | РО3 | [week-08-mvp](week-08-mvp/) | ✅ |
+| 9 | DeFi на Solana | РО3 | [week-09-defi](week-09-defi/) | ✅ |
 | 10 | RPC, API и blockchain data | РО3 | [week-10-dashboard](week-10-dashboard/) | ✅ |
 | 11 | CPI и composable applications | РО3 | [week-11-cpi](week-11-cpi/) | ✅ |
 | 12 | Security & Exploit Lab | РО4 | [week-12-security-lab](week-12-security-lab/) | ✅ |
 | 13 | RWA, Stablecoins и платежи | РО4 | [week-13-rwa-design](week-13-rwa-design/) | ✅ |
-| 14 | Capstone Build Week | РО5 | [capstone](capstone/) | ⏳ |
+| 14 | Capstone Build Week | РО5 | [capstone](capstone/) | ✅ |
 
 ## Команда
 См. [docs/team.md](docs/team.md).

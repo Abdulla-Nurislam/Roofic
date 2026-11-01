@@ -25,7 +25,7 @@ export const TOKEN = {
   name: "Roofic",
   symbol: "ROOF",
   decimals: 6,
-  uri: "https://raw.githubusercontent.com/Abdulla-Nurislam/Modules-3-6-for-IT-StartUP/main/week-07-spl-token/metadata/roof.json",
+  uri: "https://raw.githubusercontent.com/Abdulla-Nurislam/Roofic/main/week-07-spl-token/metadata/roof.json",
   /** Комиссия за перевод: 50 bps = 0.5% */
   feeBasisPoints: 50,
   /** Максимальная комиссия за один перевод: 5 000 ROOF */

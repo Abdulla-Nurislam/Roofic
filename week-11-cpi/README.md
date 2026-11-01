@@ -87,3 +87,4 @@ roofic_portfolio  : 4 passed
 - `roofic_portfolio` — `8XJaa7FSPhVBXX6SW6kxRCGNZBLt565VWHxKiSFZ7cT4`
 
 В Capstone: оплата в USDC вместо SOL, whitelist/KYC, распределение аренды держателям токена (сейчас оно привязано к `Position` из недели 8).
+
