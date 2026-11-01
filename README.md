@@ -26,8 +26,6 @@
 | 12 | Security & Exploit Lab | РО4 | [week-12-security-lab](week-12-security-lab/) | ⏳ |
 | 13 | RWA, Stablecoins и платежи | РО4 | [week-13-rwa-design](week-13-rwa-design/) | ⏳ |
 | 14 | Capstone Build Week | РО5 | [capstone](capstone/) | ⏳ |
-| 15 | РК2 · Solana Demo Day | РО5 | [week-15-demo-day](week-15-demo-day/) | ⏳ |
-| 16 | Защита проекта | РО5 | [week-16-defense](week-16-defense/) | ⏳ |
 
 ## Команда
 См. [docs/team.md](docs/team.md).
