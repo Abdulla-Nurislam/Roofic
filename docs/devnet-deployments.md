@@ -40,3 +40,16 @@
 
 - **SOL/USD (`PriceUpdateV2`):** [`J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix`](https://explorer.solana.com/address/J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix?cluster=devnet)
 - **USDC/USD (`PriceUpdateV2`):** [`5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7`](https://explorer.solana.com/address/5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7?cluster=devnet)
+
+---
+
+## 5. Платформа и объекты недвижимости в `roofic` (Неделя 14, Capstone Devnet Seed)
+
+Инициализированы скриптом `npm run seed` в [`capstone/app`](../capstone/app/):
+
+- **PlatformConfig PDA:** [`4RhKLNHHhzAwXLhed7E6ttoSx4vRHZWeEfEHMucHVwTn`](https://explorer.solana.com/address/4RhKLNHHhzAwXLhed7E6ttoSx4vRHZWeEfEHMucHVwTn?cluster=devnet)
+- **Payment Mint (Demo USDC, 6 decimals):** [`F1imQF4YjuKZDVYMRrVGZi3sffTmUFUu1KbKdQhgcN73`](https://explorer.solana.com/address/F1imQF4YjuKZDVYMRrVGZi3sffTmUFUu1KbKdQhgcN73?cluster=devnet)
+- **Platform Treasury ATA:** [`94DyWEQ9jefjqkW1qQiXhGE39osDwsGvkhH3gby9Anq3`](https://explorer.solana.com/address/94DyWEQ9jefjqkW1qQiXhGE39osDwsGvkhH3gby9Anq3?cluster=devnet)
+- **Almaty Loft #1 (`Property` PDA):** [`Den4nnxLdHra37Rh8e3qwygKoE8pMDC3PU5KQaCVkrFY`](https://explorer.solana.com/address/Den4nnxLdHra37Rh8e3qwygKoE8pMDC3PU5KQaCVkrFY?cluster=devnet) (Vault: [`6wnLsf7wwSck4g5v4YMLmkuG6NvVYxhiBvkiYyimnkuG`](https://explorer.solana.com/address/6wnLsf7wwSck4g5v4YMLmkuG6NvVYxhiBvkiYyimnkuG?cluster=devnet))
+- **Astana Business Center (`Property` PDA):** [`5uCpYV7DCk4eVZudGMmso4GZ5EkdKnuzCg3U9F28nAMB`](https://explorer.solana.com/address/5uCpYV7DCk4eVZudGMmso4GZ5EkdKnuzCg3U9F28nAMB?cluster=devnet) (Vault: [`BHoiUDxbPJL5FN7Djge1raKfucS15phCpjhR4g3NgavH`](https://explorer.solana.com/address/BHoiUDxbPJL5FN7Djge1raKfucS15phCpjhR4g3NgavH?cluster=devnet))
+- **Shymkent Family House (`Property` PDA):** [`9n8jLdfeog4fCpUBBes6WVxPJBXsx4pS7rx5n2DAqoey`](https://explorer.solana.com/address/9n8jLdfeog4fCpUBBes6WVxPJBXsx4pS7rx5n2DAqoey?cluster=devnet) (Vault: [`FVHiWsFhqYHd9mkhQ4EoqgyCPL1iAaM3etzJkgGhdf4Q`](https://explorer.solana.com/address/FVHiWsFhqYHd9mkhQ4EoqgyCPL1iAaM3etzJkgGhdf4Q?cluster=devnet))

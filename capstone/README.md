@@ -68,6 +68,23 @@ python3 -m unittest -v
 python3 engine.py
 ```
 
+## Frontend-приложение (`app/`)
+
+Полноценное веб-приложение на **Next.js 16 + Solana Wallet Adapter + `@anchor-lang/core` + `@solana/spl-token`** в папке [`app/`](app/), подключённое напрямую к программе `roofic` (`EvLmbfYUs5m5YHWm4QWCeQfy63df4BBiaBiZw8Rf12mo`) и модулю скоринга [`scoring/engine.py`](scoring/engine.py):
+
+- **Интерактивный калькулятор доходности и риска (`src/lib/scoring.ts` + `/api/score`)** — считает сценарии `bear` / `base` / `bull`, 4 фактора риска (`0..100`, грейды `A`–`D`) и формирует SHA-256 `valuation_hash`, идентичный Python-модулю `scoring/engine.py` (с кнопкой верификации через Python API).
+- **Листинг объекта (`create_property`)** — передаёт вычисленный 32-байтный `valuation_hash` в смарт-контракт, создаёт `Property` PDA, `vault` PDA и выпускает Token-2022 `share_mint` с расширением `NonTransferable`.
+- **Покупка долей (`buy_shares`), внесение аренды (`deposit_rent`) и вывод дохода (`claim_rent`)** — расчёты в стейблкоине (Demo USDC), отображение верифицированного риск-грейда и доходности по `valuation_hash` из блокчейна.
+- **Панель администратора и демо-кран (`/api/faucet`)** — управление KYC-реестром (`approve_investor` / `revoke_investor`), аварийной паузой (`set_paused`) и комиссиями (`set_fees`), а также выдача тестовых Demo USDC в один клик.
+
+```bash
+cd app
+npm install
+npm run sync-idl      # копирует IDL и типы из ../target
+npm run seed          # инициализирует PlatformConfig, Demo USDC, KYC и 3 объекта в Devnet
+npm run dev           # http://localhost:3014
+```
+
 ## Тесты смарт-контракта (LiteSVM)
 
 В [`programs/roofic/tests/roofic_test.rs`](programs/roofic/tests/roofic_test.rs) — **15 интеграционных тестов**, проверяющих все инварианты, роли, коды ошибок и сохранение денег как для классического **SPL Token (USDC)**, так и для **Token-2022 (PYUSD)**:

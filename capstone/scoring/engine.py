@@ -165,3 +165,4 @@ if __name__ == "__main__":
     )
     print(f"Factors:  {rep.factors}")
     print(f"SHA-256 valuation_hash: 0x{rep.valuation_hash_hex}")
+

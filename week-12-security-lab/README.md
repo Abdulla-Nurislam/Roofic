@@ -69,3 +69,4 @@ test result: ok. 11 passed
 - Исправление проверяется тестом: тот же эксплойт падает, обычный сценарий работает.
 
 Roofic применяет эти правила в `roofic_shares` и `roofic_portfolio` (неделя 11): `has_one`, `Program<Token2022>`, `Program<RooficShares>`, `checked_*`.
+

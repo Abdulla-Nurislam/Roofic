@@ -9,3 +9,8 @@ test-ledger/
 __pycache__/
 .ipynb_checkpoints/
 .venv/
+.vscode/
+*.tsbuildinfo
+next-env.d.ts
+*.docx
+
