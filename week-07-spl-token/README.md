@@ -68,6 +68,15 @@ CLUSTER=localnet npm run demo
 
 ## Результат в Devnet
 
-См. раздел ниже (заполняется после деплоя) и [docs/devnet-deployments.md](../docs/devnet-deployments.md).
+- **Mint (`ROOF`, Token-2022):** [`7esVWfVcskCHktfJxzd33J64BNc74jd7YYdzwBKZNbqP`](https://explorer.solana.com/address/7esVWfVcskCHktfJxzd33J64BNc74jd7YYdzwBKZNbqP?cluster=devnet)
+- **Owner / Treasury ATA (`990 050 ROOF`):** [`ANX2SCdnWAW6Rmu38aaTXFww5kwQgMkqTtqNfBXCR3Qz`](https://explorer.solana.com/address/ANX2SCdnWAW6Rmu38aaTXFww5kwQgMkqTtqNfBXCR3Qz?cluster=devnet)
+- **Recipient ATA (`9 950 ROOF`):** [`3A5Yq3wnFSSJMVpyWwjvJnwYYyPi7W1kYm7G8vNAUJbE`](https://explorer.solana.com/address/3A5Yq3wnFSSJMVpyWwjvJnwYYyPi7W1kYm7G8vNAUJbE?cluster=devnet)
 
-<!-- DEVNET_RESULTS -->
+| Шаг | Транзакция (Solana Explorer Devnet) |
+|-----|-------------------------------------|
+| 1. `createMint` (TransferFee + Metadata) | [`51zBhK44…XyhDfDM`](https://explorer.solana.com/tx/51zBhK4434ZJiEk1APKrgZTA7FLzy7uUKV1pqxBPH8uuVPZnWhCxnp3NkmYQUNJXoBgA8YT9KvMJUBLL9XyhDfDM?cluster=devnet) |
+| 2. `mintTo` (1 000 000 ROOF) | [`3aabiqAN…RMd5Zk6V`](https://explorer.solana.com/tx/3aabiqAN9tk5SRaZxWFHPRqtD1x5cYC6GEF9gZJMds34Nisu6ZUq6ckbwmNvFBWGfu8dxBDtVcjDbGT6RMd5Zk6V?cluster=devnet) |
+| 3. `transferWithFee` (10 000 ROOF, удержано 50 ROOF) | [`3wAsehNp…JME2dn72`](https://explorer.solana.com/tx/3wAsehNp8EKG5xayHiryJdqbw87ptTZqepkuQ9UgAYeU9CKczyKTxchKzjcbVPiUasKyrRUCJmkfkTjyJME2dn72?cluster=devnet) |
+| 4a. `harvestFees` (50 ROOF → mint) | [`3wpeq9v1…Fo3fRCME`](https://explorer.solana.com/tx/3wpeq9v17KUBXVia56bz2poYuecrQDpWRYS58cRSkrE9Bb6tutBHsa2Q4Qkdwe3yv3TdVfp5u1HuVSCZFo3fRCME?cluster=devnet) |
+| 4b. `withdrawFees` (50 ROOF → казна) | [`3Fb34EFC…KhgbPqV6`](https://explorer.solana.com/tx/3Fb34EFC2azXFC7n4bjDoybMx1e2YaVfAnpUqGS4WcobpHrGD4W7VtxutPphgEp5fjbAM7kY4zwMyrQnKhgbPqV6?cluster=devnet) |
+| 5. `updateMetadata:website` | [`5zPYbWR1…LR6u5m6x`](https://explorer.solana.com/tx/5zPYbWR1bqeqewtCyQRRcFMjCM49s99Ns4NCayyUKvwASKp79zW9AxXBDQk6rn6ndPZ8WkRC9a1vk1HoLR6u5m6x?cluster=devnet) |

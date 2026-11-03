@@ -80,11 +80,12 @@ roofic_portfolio  : 4 passed
 
 Причины отказа в негативных тестах проверены по кодам ошибок и логам, а не только по факту ошибки.
 
-## Что дальше
-Программы **не задеплоены в devnet** (деплой двух программ потребует заметного количества SOL). Program ID ниже зафиксированы в `declare_id!` и `Anchor.toml`:
+## Деплой в Devnet
 
-- `roofic_shares` — `DJuq8q9WhsLAbji7AbTS48tvLasnj3EoxECHsgyrQFdt`
-- `roofic_portfolio` — `8XJaa7FSPhVBXX6SW6kxRCGNZBLt565VWHxKiSFZ7cT4`
+Обе программы задеплоены в Solana Devnet:
+
+- **`roofic_shares`** — [`DJuq8q9WhsLAbji7AbTS48tvLasnj3EoxECHsgyrQFdt`](https://explorer.solana.com/address/DJuq8q9WhsLAbji7AbTS48tvLasnj3EoxECHsgyrQFdt?cluster=devnet) (tx: [`4URZzz5x…bS3AzPcH`](https://explorer.solana.com/tx/4URZzz5xLsvVucuwThcJXHRkcj5vibN32UUUZWdmMmotR6TTcd8ejF6eFCr9r13K6axBDsvk8XjqK15MbS3AzPcH?cluster=devnet))
+- **`roofic_portfolio`** — [`8XJaa7FSPhVBXX6SW6kxRCGNZBLt565VWHxKiSFZ7cT4`](https://explorer.solana.com/address/8XJaa7FSPhVBXX6SW6kxRCGNZBLt565VWHxKiSFZ7cT4?cluster=devnet) (tx: [`5qU76Yt5…cRN8ATNi`](https://explorer.solana.com/tx/5qU76Yt5aFLpbsxV6sC5SkxyexwzhZLMscoemKbMETSxmM3jG9YPe3BEnxE9VfEn7mL4m1Nfo7WGrQtGcRN8ATNi?cluster=devnet))
 
 В Capstone: оплата в USDC вместо SOL, whitelist/KYC, распределение аренды держателям токена (сейчас оно привязано к `Position` из недели 8).
 

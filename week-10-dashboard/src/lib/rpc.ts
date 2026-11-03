@@ -37,6 +37,9 @@ export const PROGRAM_LABELS: Record<string, string> = {
   MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr: "Memo",
   JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4: "Jupiter v6",
   "4qSqEcJ7KhcFsLnURE6dHuQ8KSRkkEX56oFYiRk8zKKf": "Roofic MVP",
+  DJuq8q9WhsLAbji7AbTS48tvLasnj3EoxECHsgyrQFdt: "Roofic Shares",
+  "8XJaa7FSPhVBXX6SW6kxRCGNZBLt565VWHxKiSFZ7cT4": "Roofic Portfolio",
+  EvLmbfYUs5m5YHWm4QWCeQfy63df4BBiaBiZw8Rf12mo: "Roofic Capstone",
   rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ: "Pyth Receiver",
   Vote111111111111111111111111111111111111111: "Vote",
 };

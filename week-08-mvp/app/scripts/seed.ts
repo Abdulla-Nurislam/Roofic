@@ -39,8 +39,9 @@ async function fund(to: PublicKey, sol: number) {
 async function main() {
   if (local) await fund(owner.publicKey, 10);
   const program = programFor(owner);
-  const investors = [Keypair.generate(), Keypair.generate()];
-  for (const i of investors) await fund(i.publicKey, local ? 5 : 0.05);
+  const secondInvestor = Keypair.generate();
+  await fund(secondInvestor.publicKey, local ? 5 : 1.4);
+  const investors = [owner, secondInvestor];
 
   for (const [n, l] of LISTINGS.entries()) {
     const id = new BN(Date.now() + n);

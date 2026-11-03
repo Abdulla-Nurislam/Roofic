@@ -4,7 +4,7 @@
 |---|---|
 | **Задание** | Собрать финальный прототип продукта, объединяющий смарт-контракты, токенизацию, платежи в стейблкоинах, безопасность и аналитический модуль |
 | **РО** | РО5 — комплексная разработка и защита блокчейн-проекта на Solana |
-| **Program ID** | `EvLmbfYUs5m5YHWm4QWCeQfy63df4BBiaBiZw8Rf12mo` |
+| **Program ID (Devnet)** | [`EvLmbfYUs5m5YHWm4QWCeQfy63df4BBiaBiZw8Rf12mo`](https://explorer.solana.com/address/EvLmbfYUs5m5YHWm4QWCeQfy63df4BBiaBiZw8Rf12mo?cluster=devnet) (tx: [`5FZYeii7…xb83yYNSQ`](https://explorer.solana.com/tx/5FZYeii7wHmjr4EBvPequQmRRSiEFxefjv2uXUkag66tZiddX92YVX5XehSo4gNSMTwUyuKNM4sLUgwxb83yYNSQ?cluster=devnet)) |
 
 ## Что изменилось от MVP (неделя 8) к Capstone
 
