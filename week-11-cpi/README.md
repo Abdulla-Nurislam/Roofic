@@ -80,6 +80,40 @@ roofic_portfolio  : 4 passed
 
 Причины отказа в негативных тестах проверены по кодам ошибок и логам, а не только по факту ошибки.
 
+## Клиент (TypeScript) — сценарий на живой сети
+
+[`client/src/demo.ts`](client/src/demo.ts) выполняет весь составной сценарий на кластере и проверяет результат через `assert`: листинг → `buy_and_track` дважды → портфель → негативные сценарии → перевод долей другому кошельку.
+
+```bash
+cd client && npm install
+npm run demo                               # Devnet, кошелёк ~/.config/solana/id.json, нужно ~0.05 SOL
+
+# Localnet (программы загружаются в валидатор из target/deploy после anchor build)
+solana-test-validator -r \
+  --bpf-program DJuq8q9WhsLAbji7AbTS48tvLasnj3EoxECHsgyrQFdt ../target/deploy/roofic_shares.so \
+  --bpf-program 8XJaa7FSPhVBXX6SW6kxRCGNZBLt565VWHxKiSFZ7cT4 ../target/deploy/roofic_portfolio.so
+CLUSTER=localnet npm run demo
+```
+
+IDL лежат в [`client/idl`](client/idl); после изменения программ обновите их командой `npm run sync-idl`.
+
+Проверки клиента: владелец получает ровно `shares × price`; mint authority — PDA, а не человек; токены и `Portfolio` совпадают с покупками; покупка сверх лимита → `NotEnoughShares`; подмена `roofic_shares` на другую программу → `InvalidProgramId`; supply после отклонённых операций не меняется; перевод долей не меняет supply.
+
+### Результат запуска в Devnet
+
+| Шаг | Транзакция |
+|-----|-----------|
+| `create_listing` | [`5hUBZvCR…fck8xNb`](https://explorer.solana.com/tx/5hUBZvCRgnbdL66iGkH7xTbX7mJEXxdvraxXuoQ9t1AFqRH8cvKuHX1tyXkecezhvtmya8noVPiSEtowfGck8xNb?cluster=devnet) |
+| `buy_and_track(10)` — вложенный CPI | [`4gj1rJSv…2bbUku`](https://explorer.solana.com/tx/4gj1rJSvaVCiBxrNyNnbvvckNprYK5VDHVrEa327LNitcLJyRxNj6HPSw9Dt9Kxvtjq1e6Bjo3eZszbxFW2bbUku?cluster=devnet) |
+| `buy_and_track(5)` | [`2RK4T9xP…NgZqwa`](https://explorer.solana.com/tx/2RK4T9xPTRtMVooQHRbptVLw6bd4VmLph1jABVpxb5zof5Urgo7xBZunkEArTFVn75aMHZuqeBcLekGbttgNZqwa?cluster=devnet) |
+| `TransferChecked` 3 доли | [`2yi3m2fD…mG1R`](https://explorer.solana.com/tx/2yi3m2fDUXGGCJsNvoiB2N3NpKXnt1i6ZtoPxXG5pSDgBpa9L14e1VLaxKBBjtZGV1jAoqfd297RfsP3EdDYmG1R?cluster=devnet) |
+
+Листинг [`NkwhJGCx…ZRQ`](https://explorer.solana.com/address/NkwhJGCxZkCoYjgHukxT8e27CngnRVrSbKmCH1z5ZRQ?cluster=devnet), mint долей [`HRy2gRT8…egZg`](https://explorer.solana.com/address/HRy2gRT8EG38mw5NG735zm4LnMBqotsJzJuykWrvegZg?cluster=devnet).
+
+### Известные ограничения
+- **Источник истины «продано» — `supply` mint-а.** Держатель может сжечь (`burn`) свои токены, `supply` уменьшится, и освободившиеся доли снова станут доступны для покупки. Для MVP это допустимо (сжигание необратимо для самого держателя), но если «продано» должно быть монотонным, нужен отдельный счётчик в `Listing`.
+- Владелец объекта получает платёж напрямую при покупке — эскроу и возврат средств в программе не реализованы.
+
 ## Деплой в Devnet
 
 Обе программы задеплоены в Solana Devnet:

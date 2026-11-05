@@ -104,7 +104,7 @@ export default function Home() {
         <div className="stats">
           <div className="glass stat"><div className="stat-label">Объектов</div><div className="stat-value">{stats.count}</div></div>
           <div className="glass stat"><div className="stat-label">Привлечено</div><div className="stat-value">{sol(stats.raised)} SOL</div>{usd(stats.raised) && <div className="stat-sub">{usd(stats.raised)}</div>}</div>
-          <div className="glass stat"><div className="stat-label">Выплачено аренды</div><div className="stat-value">{sol(stats.rent)} SOL</div>{usd(stats.rent) && <div className="stat-sub">{usd(stats.rent)}</div>}</div>
+          <div className="glass stat"><div className="stat-label">Внесено аренды</div><div className="stat-value">{sol(stats.rent)} SOL</div>{usd(stats.rent) && <div className="stat-sub">{usd(stats.rent)}</div>}</div>
           <div className="glass stat"><div className="stat-label">Мои позиции</div><div className="stat-value">{stats.investors}</div></div>
         </div>
       </section>
@@ -175,7 +175,7 @@ export default function Home() {
 
       <footer className="footer">
         Roofic · Week 8 Build Sprint · Solana Devnet ·{" "}
-        <a href="https://github.com/Abdulla-Nurislam/Modules-3-6-for-IT-StartUP" target="_blank">GitHub</a>
+        <a href="https://github.com/Abdulla-Nurislam/Roofic" target="_blank">GitHub</a>
       </footer>
 
       {toast && (
@@ -253,7 +253,7 @@ function PropertyCard({ p, position, me, usd, busy, onBuy, onDeposit, onClaim }:
 
       <div className="kv">
         <div><span>Цена доли</span><strong>{sol(a.pricePerShare)} SOL</strong>{usd(a.pricePerShare) && <small className="usd">{usd(a.pricePerShare)}</small>}</div>
-        <div><span>Аренда выплачено</span><strong>{sol(a.totalRentDeposited)} SOL</strong>{usd(a.totalRentDeposited) && <small className="usd">{usd(a.totalRentDeposited)}</small>}</div>
+        <div><span>Аренда внесена</span><strong>{sol(a.totalRentDeposited)} SOL</strong>{usd(a.totalRentDeposited) && <small className="usd">{usd(a.totalRentDeposited)}</small>}</div>
       </div>
 
       {position && claimable && (

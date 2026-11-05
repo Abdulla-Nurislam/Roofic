@@ -9,6 +9,7 @@ import {
   Connection,
   LAMPORTS_PER_SOL,
   PublicKey,
+  type ParsedAccountData,
   type ParsedTransactionWithMeta,
 } from "@solana/web3.js";
 
@@ -90,6 +91,24 @@ interface ParsedMintInfo {
   extensions?: { extension: string; state: Record<string, unknown> }[];
 }
 
+/** Лимит RPC `getMultipleAccounts`: не более 100 адресов за запрос */
+export const MAX_MULTIPLE_ACCOUNTS = 100;
+
+/** Загружает parsed-данные mint-ов пачками по 100 штук (с дедупликацией) → Map<mint, data> */
+export async function fetchParsedMints(conn: Connection, mints: string[]): Promise<Map<string, ParsedAccountData | Buffer | undefined>> {
+  const unique = [...new Set(mints)];
+  const out = new Map<string, ParsedAccountData | Buffer | undefined>();
+  for (let i = 0; i < unique.length; i += MAX_MULTIPLE_ACCOUNTS) {
+    const chunk = unique.slice(i, i + MAX_MULTIPLE_ACCOUNTS);
+    const res = await conn.getMultipleParsedAccounts(
+      chunk.map((m) => new PublicKey(m)),
+      { commitment: "confirmed" },
+    );
+    chunk.forEach((m, j) => out.set(m, res.value[j]?.data));
+  }
+  return out;
+}
+
 export async function fetchTokens(conn: Connection, owner: PublicKey): Promise<TokenHolding[]> {
   const programs = [
     { id: new PublicKey(TOKEN_PROGRAM), name: "SPL Token" as const },
@@ -107,15 +126,15 @@ export async function fetchTokens(conn: Connection, owner: PublicKey): Promise<T
 
   if (accounts.length === 0) return [];
 
-  // Данные mint нужны для metadata (Token-2022) и supply
-  const mintKeys = accounts.map(({ v }) => new PublicKey(v.account.data.parsed.info.mint as string));
-  const mintAccounts = await conn.getMultipleParsedAccounts(mintKeys, { commitment: "confirmed" });
+  // Данные mint нужны для metadata (Token-2022) и supply.
+  // getMultipleAccounts принимает максимум 100 адресов, поэтому mint-ы дедуплицируются и режутся на пачки.
+  const mintAccounts = await fetchParsedMints(conn, accounts.map(({ v }) => v.account.data.parsed.info.mint as string));
 
   return accounts
-    .map(({ v, program }, i): TokenHolding => {
+    .map(({ v, program }): TokenHolding => {
       const info = v.account.data.parsed.info;
       const mint = info.mint as string;
-      const parsedMint = mintAccounts.value[i]?.data;
+      const parsedMint = mintAccounts.get(mint);
       const mintInfo =
         parsedMint && "parsed" in parsedMint ? (parsedMint.parsed.info as ParsedMintInfo) : undefined;
 

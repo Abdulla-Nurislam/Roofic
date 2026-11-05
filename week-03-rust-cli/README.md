@@ -40,3 +40,4 @@ cargo run -- close bob
 4. Отказ при попытке перевести больше доступного баланса (`InsufficientFunds`).
 5. Закрытие аккаунта `bob` (`CloseWallet`) с обнулением баланса и флага `is_initialized = false`.
 6. Отказ при переводе на закрытый (`AccountClosed`) или несуществующий (`AccountNotFound`) аккаунт.
+

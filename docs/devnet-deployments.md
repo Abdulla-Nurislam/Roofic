@@ -38,8 +38,13 @@
 
 ## 4. Оракулы Pyth (Неделя 9, Devnet)
 
-- **SOL/USD (`PriceUpdateV2`):** [`J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix`](https://explorer.solana.com/address/J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix?cluster=devnet)
-- **USDC/USD (`PriceUpdateV2`):** [`5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7`](https://explorer.solana.com/address/5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7?cluster=devnet)
+Sponsored-фиды Pyth (`PriceUpdateV2`, владелец — Pyth Receiver [`rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ`](https://explorer.solana.com/address/rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ?cluster=devnet)). Те же адреса используются в [`week-09-defi/src/pyth.ts`](../week-09-defi/src/pyth.ts) и [`week-08-mvp/app/src/lib/pyth.ts`](../week-08-mvp/app/src/lib/pyth.ts):
+
+- **SOL/USD:** [`7UVimffxr9ow1uXYxsr4LHAcV58mLzhmwaeKvJ1pjLiE`](https://explorer.solana.com/address/7UVimffxr9ow1uXYxsr4LHAcV58mLzhmwaeKvJ1pjLiE?cluster=devnet)
+- **USDC/USD:** [`Dpw1EAVrSB1ibxiDQyTAW6Zip3J4Btk2x4SgApQCeFbX`](https://explorer.solana.com/address/Dpw1EAVrSB1ibxiDQyTAW6Zip3J4Btk2x4SgApQCeFbX?cluster=devnet)
+- **USDT/USD:** [`HT2PLQBcG5EiCcNSaMHAjSgd9F98ecpATbk4Sk5oYuM`](https://explorer.solana.com/address/HT2PLQBcG5EiCcNSaMHAjSgd9F98ecpATbk4Sk5oYuM?cluster=devnet)
+
+> Ранее в этом разделе были указаны адреса `J83w4HKf…` и `5SSkXsEK…`: это устаревшие price-аккаунты старого Pyth (владелец `gSbePebf…`), а не `PriceUpdateV2`; декодер из недели 9 их бы отклонил проверкой владельца.
 
 ---
 
@@ -53,3 +58,13 @@
 - **Almaty Loft #1 (`Property` PDA):** [`Den4nnxLdHra37Rh8e3qwygKoE8pMDC3PU5KQaCVkrFY`](https://explorer.solana.com/address/Den4nnxLdHra37Rh8e3qwygKoE8pMDC3PU5KQaCVkrFY?cluster=devnet) (Vault: [`6wnLsf7wwSck4g5v4YMLmkuG6NvVYxhiBvkiYyimnkuG`](https://explorer.solana.com/address/6wnLsf7wwSck4g5v4YMLmkuG6NvVYxhiBvkiYyimnkuG?cluster=devnet))
 - **Astana Business Center (`Property` PDA):** [`5uCpYV7DCk4eVZudGMmso4GZ5EkdKnuzCg3U9F28nAMB`](https://explorer.solana.com/address/5uCpYV7DCk4eVZudGMmso4GZ5EkdKnuzCg3U9F28nAMB?cluster=devnet) (Vault: [`BHoiUDxbPJL5FN7Djge1raKfucS15phCpjhR4g3NgavH`](https://explorer.solana.com/address/BHoiUDxbPJL5FN7Djge1raKfucS15phCpjhR4g3NgavH?cluster=devnet))
 - **Shymkent Family House (`Property` PDA):** [`9n8jLdfeog4fCpUBBes6WVxPJBXsx4pS7rx5n2DAqoey`](https://explorer.solana.com/address/9n8jLdfeog4fCpUBBes6WVxPJBXsx4pS7rx5n2DAqoey?cluster=devnet) (Vault: [`FVHiWsFhqYHd9mkhQ4EoqgyCPL1iAaM3etzJkgGhdf4Q`](https://explorer.solana.com/address/FVHiWsFhqYHd9mkhQ4EoqgyCPL1iAaM3etzJkgGhdf4Q?cluster=devnet))
+
+---
+
+## 6. Демонстрация составного CPI-сценария (Неделя 11, Devnet)
+
+Запуск [`week-11-cpi/client`](../week-11-cpi/client/) (`npm run demo`): листинг, две покупки через `roofic_portfolio` → `roofic_shares` → Token-2022, негативные проверки, перевод долей.
+
+- **Listing PDA:** [`NkwhJGCxZkCoYjgHukxT8e27CngnRVrSbKmCH1z5ZRQ`](https://explorer.solana.com/address/NkwhJGCxZkCoYjgHukxT8e27CngnRVrSbKmCH1z5ZRQ?cluster=devnet)
+- **Share mint (Token-2022):** [`HRy2gRT8EG38mw5NG735zm4LnMBqotsJzJuykWrvegZg`](https://explorer.solana.com/address/HRy2gRT8EG38mw5NG735zm4LnMBqotsJzJuykWrvegZg?cluster=devnet)
+- **`buy_and_track(10)`:** [`4gj1rJSv…2bbUku`](https://explorer.solana.com/tx/4gj1rJSvaVCiBxrNyNnbvvckNprYK5VDHVrEa327LNitcLJyRxNj6HPSw9Dt9Kxvtjq1e6Bjo3eZszbxFW2bbUku?cluster=devnet)
