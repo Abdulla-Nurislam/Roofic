@@ -55,6 +55,80 @@ jobs:
         working-directory: capstone/scoring
         run: python3 -m unittest -v
 
+  anchor-litesvm:
+    name: Anchor SBF Build & LiteSVM Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Solana CLI (Agave)
+        id: solana-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/solana
+          key: solana-agave-${{ runner.os }}-${{ env.SOLANA_VERSION }}
+
+      - name: Install Solana CLI (Agave)
+        if: steps.solana-cache.outputs.cache-hit != 'true'
+        run: sh -c "$(curl -sSfL "https://release.anza.xyz/v${SOLANA_VERSION}/install")"
+
+      - name: Add Solana CLI to PATH
+        run: |
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/share/solana/install/active_release/bin/solana" --version
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            week-05-anchor-counter -> target
+            week-06-pda-profile -> target
+            week-08-mvp -> target
+            week-11-cpi -> target
+            week-12-security-lab -> target
+            capstone -> target
+
+      - name: Week 5 — Anchor Counter (SBF + LiteSVM)
+        working-directory: week-05-anchor-counter
+        run: |
+          cargo build-sbf
+          cargo test
+
+      - name: Week 6 — PDA Profile (SBF + LiteSVM)
+        working-directory: week-06-pda-profile
+        run: |
+          cargo build-sbf
+          cargo test
+
+      - name: Week 8 — Roofic MVP (SBF + LiteSVM)
+        working-directory: week-08-mvp
+        run: |
+          cargo build-sbf
+          cargo test
+
+      - name: Week 11 — CPI Shares & Portfolio (SBF + LiteSVM)
+        working-directory: week-11-cpi
+        run: |
+          cargo build-sbf --manifest-path programs/roofic_shares/Cargo.toml
+          cargo build-sbf --manifest-path programs/roofic_portfolio/Cargo.toml
+          cargo test
+
+      - name: Week 12 — Security & Exploit Lab (SBF + LiteSVM)
+        working-directory: week-12-security-lab
+        run: |
+          cargo build-sbf --manifest-path programs/exploit_lab/Cargo.toml
+          cargo build-sbf --manifest-path programs/evil_program/Cargo.toml
+          cargo test
+
+      - name: Week 14 — Capstone Roofic Program (SBF + LiteSVM)
+        working-directory: capstone
+        run: |
+          cargo build-sbf --manifest-path programs/roofic/Cargo.toml
+          cargo test
+
   node-apps:
     name: TypeScript & Next.js Verification
     runs-on: ubuntu-latest
