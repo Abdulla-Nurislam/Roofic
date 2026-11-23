@@ -606,9 +606,15 @@ fn only_the_property_manager_can_deposit_rent() {
             },
         )
         .unwrap();
+    let treasury_before = w.token_balance(&w.treasury);
+    let prop_before = w.property_state();
     let err = w.deposit_rent(&owner, owner_pay, 100 * USDC).expect_err("owner is not the manager");
     assert!(err.contains(&custom(RooficError::NotManager)), "got {err}");
+    // State immutability after rejected tx
     assert_eq!(w.token_balance(&w.vault), 0);
+    assert_eq!(w.token_balance(&w.treasury), treasury_before);
+    assert_eq!(w.property_state().acc_rent_per_share, prop_before.acc_rent_per_share);
+    assert_eq!(w.property_state().total_rent_deposited, prop_before.total_rent_deposited);
 }
 
 #[test]
