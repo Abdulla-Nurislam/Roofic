@@ -1,91 +1,57 @@
-Roofic Dual License (BSL 1.1 + MIT)
-Copyright (c) 2026 Roofic Team (Nurislam Abdulla, Nurym Abildayev, Muhammedali Yilmaz, Zhangir Kadirkhanov)
+Business Source License 1.1
 
-================================================================================
-COMPONENT LICENSING SUMMARY
-================================================================================
+License text copyright (c) 2017 MariaDB Corporation Ab, All Rights Reserved.
+"Business Source License" is a trademark of MariaDB Corporation Ab.
 
-1. Core Protocol & Scoring Engine — Business Source License 1.1 (BSL 1.1)
-   Applies to:
-     - capstone/programs/
-     - week-11-cpi/programs/
-     - week-08-mvp/programs/
-     - capstone/scoring/
-     - week-13-rwa-design/model/
-   Change Date: 2029-11-24
-   Change License: MIT License (below)
+Parameters
 
-2. Client Applications, SDKs, Labs & Documentation — MIT License
-   Applies to:
-     - capstone/app/
-     - week-08-mvp/app/, week-09-defi/, week-10-dashboard/
-     - week-03-rust-cli/ through week-07-spl-token/, week-12-security-lab/
-     - docs/, scripts, tests, and all other files not listed under Section 1
-
-================================================================================
-PART I — BUSINESS SOURCE LICENSE 1.1 (CORE PROTOCOL & SCORING)
-================================================================================
-
-Licensor:             Roofic Team
-Licensed Work:        Roofic Core Solana/Anchor Smart Contracts & Scoring Engine
-                      (capstone/programs/, week-11-cpi/programs/,
-                       week-08-mvp/programs/, capstone/scoring/,
-                       week-13-rwa-design/model/)
+Licensor:             Roofic Team (Nurislam Abdulla, Nurym Abildayev, Muhammedali Yilmaz, Zhangir Kadirkhanov)
+Licensed Work:        Roofic Protocol & Web Platform (The software in this repository)
 Additional Use Grant: Non-production use, academic evaluation, security audits,
-                      research, and local/Devnet testing are permitted without
-                      fee. Commercial production deployment requires a separate
-                      commercial license from the Licensor prior to the Change
-                      Date.
+                      research, and local or Solana Devnet testing are
+                      permitted without fee.
 Change Date:          2029-11-24
-Change License:       MIT License
+Change License:       MIT License (https://spdx.org/licenses/MIT.html)
 
-License Text:
+Terms and Conditions
 
-Subject to the terms and conditions of this License (the "License"), the
-Licensor hereby grants you a worldwide, royalty-free, non-exclusive license to
-use the Licensed Work strictly for Non-Production purposes and as otherwise
-expressly permitted under the Additional Use Grant above.
+The Licensor hereby grants permission to use the Licensed Work, subject to the
+Conditions stated below.
 
-You may copy, modify, and distribute the Licensed Work, provided that every
-copy and derivative work retains this notice and is used solely in compliance
-with the Non-Production restriction and the Additional Use Grant until the
-Change Date. You may not make Production Use of the Licensed Work without first
-obtaining a separate commercial license from the Licensor.
+Conditions
 
-Effective on the Change Date, or the fourth anniversary of the first publicly
-available distribution of a specific version of the Licensed Work under this
-License, whichever comes first, the Licensor hereby grants you rights to the
-Licensed Work under the Change License specified above, and this License shall
-no longer restrict Production Use of that version.
+1. You may make any number of copies of the Licensed Work, and may modify the
+   Licensed Work to create Derivative Works, as long as all copies and
+   Derivative Works retain this License notice and any copyright notices.
 
-THE LICENSED WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-LICENSED WORK.
+2. You may not make Production Use of the Licensed Work except as expressly
+   permitted under the Additional Use Grant or under a separate commercial
+   license agreement executed with the Licensor.
 
-================================================================================
-PART II — MIT LICENSE (CLIENT APPS, SDKs, LABS & DOCUMENTATION)
-================================================================================
+3. Effective on the Change Date, or the fourth anniversary of the first
+   publicly available distribution of a specific version of the Licensed Work
+   under this License, whichever comes first, the Licensor hereby grants you
+   rights under the Change License, and the restriction on Production Use in
+   Section 2 shall cease to apply to that version.
 
-Copyright (c) 2026 Roofic Team (Nurislam Abdulla, Nurym Abildayev, Muhammedali Yilmaz, Zhangir Kadirkhanov)
+4. If you violate any of the Conditions of this License, your rights under this
+   License terminate immediately unless cured within thirty (30) days after
+   notice from the Licensor.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Disclaimer of Warranty and Limitation of Liability
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+THE LICENSED WORK IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING, WITHOUT
+LIMITATION, ANY WARRANTIES OR CONDITIONS OF TITLE, NON-INFRINGEMENT,
+MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. YOU ARE SOLELY
+RESPONSIBLE FOR DETERMINING THE APPROPRIATENESS OF USING OR REDISTRIBUTING THE
+LICENSED WORK AND ASSUME ANY RISKS ASSOCIATED WITH YOUR EXERCISE OF PERMISSIONS
+UNDER THIS LICENSE.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+IN NO EVENT SHALL THE LICENSOR OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THE LICENSED WORK, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
