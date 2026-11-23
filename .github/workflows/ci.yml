@@ -29,6 +29,12 @@ jobs:
         with:
           components: clippy
 
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            week-03-rust-cli -> target
+            week-04-native-program -> target
+
       - name: Week 3 — Rust CLI tests & clippy
         working-directory: week-03-rust-cli
         run: |
