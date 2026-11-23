@@ -40,6 +40,19 @@ pub const BPS: u64 = 10_000;
 pub const MAX_FEE_BPS: u16 = 2_000;
 pub const MAX_NAME_LEN: usize = 48;
 
+#[constant]
+pub const CONFIG_SEED: &[u8] = b"config";
+#[constant]
+pub const INVESTOR_SEED: &[u8] = b"investor";
+#[constant]
+pub const PROPERTY_SEED: &[u8] = b"property";
+#[constant]
+pub const SHARE_MINT_SEED: &[u8] = b"share_mint";
+#[constant]
+pub const VAULT_SEED: &[u8] = b"vault";
+#[constant]
+pub const POSITION_SEED: &[u8] = b"position";
+
 #[program]
 pub mod roofic {
     use super::*;
@@ -114,7 +127,7 @@ pub mod roofic {
         // which must be initialised BEFORE `initialize_mint`.
         let property_key = ctx.accounts.property.key();
         let mint_bump = ctx.bumps.share_mint;
-        let mint_seeds: &[&[u8]] = &[b"share_mint", property_key.as_ref(), &[mint_bump]];
+        let mint_seeds: &[&[u8]] = &[SHARE_MINT_SEED, property_key.as_ref(), &[mint_bump]];
         let len = ExtensionType::try_calculate_account_len::<Mint2022>(&[ExtensionType::NonTransferable])?;
         create_account(
             CpiContext::new_with_signer(
@@ -227,7 +240,7 @@ pub mod roofic {
 
         let property = &ctx.accounts.property;
         let id_bytes = property.id.to_le_bytes();
-        let seeds: &[&[u8]] = &[b"property", property.owner.as_ref(), &id_bytes, &[property.bump]];
+        let seeds: &[&[u8]] = &[PROPERTY_SEED, property.owner.as_ref(), &id_bytes, &[property.bump]];
         mint_to(
             CpiContext::new_with_signer(
                 ctx.accounts.share_token_program.key(),
@@ -314,7 +327,7 @@ pub mod roofic {
         let decimals = ctx.accounts.payment_mint.decimals;
         let property = &ctx.accounts.property;
         let id_bytes = property.id.to_le_bytes();
-        let seeds: &[&[u8]] = &[b"property", property.owner.as_ref(), &id_bytes, &[property.bump]];
+        let seeds: &[&[u8]] = &[PROPERTY_SEED, property.owner.as_ref(), &id_bytes, &[property.bump]];
         pay(
             &ctx.accounts.payment_token_program,
             &ctx.accounts.payment_mint,
