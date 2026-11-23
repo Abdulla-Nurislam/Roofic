@@ -1,4 +1,74 @@
-MIT License
+Roofic Dual License (BSL 1.1 + MIT)
+Copyright (c) 2026 Roofic Team (Nurislam Abdulla, Nurym Abildayev, Muhammedali Yilmaz, Zhangir Kadirkhanov)
+
+================================================================================
+COMPONENT LICENSING SUMMARY
+================================================================================
+
+1. Core Protocol & Scoring Engine — Business Source License 1.1 (BSL 1.1)
+   Applies to:
+     - capstone/programs/
+     - week-11-cpi/programs/
+     - week-08-mvp/programs/
+     - capstone/scoring/
+     - week-13-rwa-design/model/
+   Change Date: 2029-11-24
+   Change License: MIT License (below)
+
+2. Client Applications, SDKs, Labs & Documentation — MIT License
+   Applies to:
+     - capstone/app/
+     - week-08-mvp/app/, week-09-defi/, week-10-dashboard/
+     - week-03-rust-cli/ through week-07-spl-token/, week-12-security-lab/
+     - docs/, scripts, tests, and all other files not listed under Section 1
+
+================================================================================
+PART I — BUSINESS SOURCE LICENSE 1.1 (CORE PROTOCOL & SCORING)
+================================================================================
+
+Licensor:             Roofic Team
+Licensed Work:        Roofic Core Solana/Anchor Smart Contracts & Scoring Engine
+                      (capstone/programs/, week-11-cpi/programs/,
+                       week-08-mvp/programs/, capstone/scoring/,
+                       week-13-rwa-design/model/)
+Additional Use Grant: Non-production use, academic evaluation, security audits,
+                      research, and local/Devnet testing are permitted without
+                      fee. Commercial production deployment requires a separate
+                      commercial license from the Licensor prior to the Change
+                      Date.
+Change Date:          2029-11-24
+Change License:       MIT License
+
+License Text:
+
+Subject to the terms and conditions of this License (the "License"), the
+Licensor hereby grants you a worldwide, royalty-free, non-exclusive license to
+use the Licensed Work strictly for Non-Production purposes and as otherwise
+expressly permitted under the Additional Use Grant above.
+
+You may copy, modify, and distribute the Licensed Work, provided that every
+copy and derivative work retains this notice and is used solely in compliance
+with the Non-Production restriction and the Additional Use Grant until the
+Change Date. You may not make Production Use of the Licensed Work without first
+obtaining a separate commercial license from the Licensor.
+
+Effective on the Change Date, or the fourth anniversary of the first publicly
+available distribution of a specific version of the Licensed Work under this
+License, whichever comes first, the Licensor hereby grants you rights to the
+Licensed Work under the Change License specified above, and this License shall
+no longer restrict Production Use of that version.
+
+THE LICENSED WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+LICENSED WORK.
+
+================================================================================
+PART II — MIT LICENSE (CLIENT APPS, SDKs, LABS & DOCUMENTATION)
+================================================================================
 
 Copyright (c) 2026 Roofic Team (Nurislam Abdulla, Nurym Abildayev, Muhammedali Yilmaz, Zhangir Kadirkhanov)
 
@@ -19,4 +89,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
