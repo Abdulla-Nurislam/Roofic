@@ -1,11 +1,22 @@
-# Roofic — Solana IT-Startup Course
+<div align="center">
 
-> **Roofic** — платформа фракционной токенизации арендной недвижимости (RWA) на Solana.
-> Верифицированный инвестор покупает долю объекта (**Token-2022 `NonTransferable`**) за стейблкоин (USDC / PYUSD) и получает арендный доход пропорционально доле через ончейн-аккумулятор $O(1)$.
-> Детерминированный аналитический модуль оценивает чистую доходность (`bear` / `base` / `bull`) и риск-скор объекта (`0..100`, грейды `A`–`D`), фиксируя `SHA-256` хэш оценки (`valuation_hash`) ончейн.
+<img src="docs/assets/roofic-logo.png" width="112" alt="Логотип Roofic" />
 
-Репозиторий организован **по неделям тематического плана**: каждая папка `week-NN-*` — отдельная лабораторная
-с собственным `README.md` (задание → результат обучения → реализация → запуск → проверка).
+# Roofic
+
+**Платформа фракционной токенизации арендной недвижимости (RWA) на Solana**
+
+[![Roofic CI](https://github.com/Abdulla-Nurislam/Roofic/actions/workflows/ci.yml/badge.svg)](https://github.com/Abdulla-Nurislam/Roofic/actions/workflows/ci.yml)
+![Solana Devnet](https://img.shields.io/badge/Solana-Devnet-9945FF?style=flat-square&logo=solana&logoColor=white)
+![Anchor 1.2.0](https://img.shields.io/badge/Anchor-1.2.0-111827?style=flat-square&logo=rust&logoColor=white)
+![Token-2022](https://img.shields.io/badge/SPL-Token--2022-14F195?style=flat-square&logoColor=black)
+![Next.js](https://img.shields.io/badge/Next.js-App_Router-000000?style=flat-square&logo=nextdotjs&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-C2410C?style=flat-square)
+
+</div>
+
+---
+
 Финальный продукт находится в [`capstone/`](capstone/).
 
 ## Карта курса
