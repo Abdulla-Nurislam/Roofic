@@ -75,7 +75,22 @@ flowchart LR
 
 ---
 
+## Ключевые возможности Capstone-протокола
+
+| Возможность | Реализация |
+|---|---|
+| Ролевая модель (4 роли) | `admin` (через `ProgramData` upgrade authority), `owner` (KYB), `manager` (УК), `investor` (KYC) |
+| Стейблкоин-расчёты | `TokenInterface` + `transfer_checked` (SPL USDC и Token-2022 PYUSD) с проверкой на отсутствие `TransferFee`/`TransferHook`/`PermanentDelegate` |
+| Защита долей и пула | `NonTransferable` Token-2022 + учёт по монотонному `property.shares_sold` (защита от burn-манипуляции) |
+| Распределение аренды за $O(1)$ | Аккумулятор `acc_rent_per_share` с масштабом `1e12` (`u128`), закон сохранения средств проверен тестами |
+| Несгораемый вывод средств | `claim_rent` работает даже при `paused = true` и после отзыва KYC (`revoke_investor`) |
+| Ончейн-скоринг и DeFi | Сверка Python ↔ TypeScript (`SHA-256 valuation_hash`), живые фиды Pyth (`SOL/USD`, `USDC/USD`) и котировка Jupiter v6 |
+
+---
+
 ## Карта курса
+
+Репозиторий организован **по неделям тематического плана**: каждая папка `week-NN-*` — самостоятельная лабораторная с собственным `README.md`, а финальный продукт находится в [`capstone/`](capstone/).
 
 | Неделя | Тема | РО | Папка | Статус |
 |-------:|------|:--:|-------|:------:|
@@ -90,9 +105,11 @@ flowchart LR
 | 11 | CPI и composable applications | РО3 | [week-11-cpi](week-11-cpi/) | ✅ (11 тестов, 2 программы) |
 | 12 | Security & Exploit Lab | РО4 | [week-12-security-lab](week-12-security-lab/) | ✅ (11 эксплойт/фикс-тестов) |
 | 13 | RWA, Stablecoins и платежи | РО4 | [week-13-rwa-design](week-13-rwa-design/) | ✅ (12 тестов финмодели) |
-| 14 | Capstone Build Week | РО5 | [capstone](capstone/) | ✅ (22 Rust + 5 Python тестов, Next.js, Devnet) |
+| 14 | Capstone Build Week | РО5 | [capstone](capstone/) | ✅ (23 Rust + 5 Python тестов, Next.js, Devnet) |
 | 15 | РК2 · Solana Demo Day (5–7 мин питч и live demo) | РО5 | [docs/pitch-and-demo.md](docs/pitch-and-demo.md) | ✅ |
 | 16 | Защита проекта (Q&A, архитектура и безопасность) | РО1–5 | [docs/pitch-and-demo.md](docs/pitch-and-demo.md) | ✅ |
+
+---
 
 ## Команда и вклад участников
 См. [docs/team.md](docs/team.md).
