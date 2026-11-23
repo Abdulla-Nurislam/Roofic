@@ -6,12 +6,12 @@
 
 **Платформа фракционной токенизации арендной недвижимости (RWA) на Solana**
 
-[![Roofic CI](https://github.com/Abdulla-Nurislam/Roofic/actions/workflows/ci.yml/badge.svg)](https://github.com/Abdulla-Nurislam/Roofic/actions/workflows/ci.yml)
-![Solana Devnet](https://img.shields.io/badge/Solana-Devnet-9945FF?style=flat-square&logo=solana&logoColor=white)
-![Anchor 1.2.0](https://img.shields.io/badge/Anchor-1.2.0-111827?style=flat-square&logo=rust&logoColor=white)
-![Token-2022](https://img.shields.io/badge/SPL-Token--2022-14F195?style=flat-square&logoColor=black)
-![Next.js](https://img.shields.io/badge/Next.js-App_Router-000000?style=flat-square&logo=nextdotjs&logoColor=white)
-![License: MIT](https://img.shields.io/badge/License-MIT-C2410C?style=flat-square)
+[![Roofic CI](https://img.shields.io/github/actions/workflow/status/Abdulla-Nurislam/Roofic/ci.yml?branch=main&style=for-the-badge&label=Roofic%20CI&labelColor=111318&color=10B981&logo=githubactions&logoColor=10B981)](https://github.com/Abdulla-Nurislam/Roofic/actions/workflows/ci.yml)
+![Solana Devnet](https://img.shields.io/badge/Solana-Devnet-10B981?style=for-the-badge&labelColor=111318&logo=solana&logoColor=10B981)
+![Anchor 1.2.0](https://img.shields.io/badge/Anchor-1.2.0-27272A?style=for-the-badge&labelColor=111318&logo=rust&logoColor=EAEAE6)
+![SPL Token-2022](https://img.shields.io/badge/SPL-Token--2022-27272A?style=for-the-badge&labelColor=111318&logo=solana&logoColor=10B981)
+![Next.js](https://img.shields.io/badge/Next.js-App_Router-27272A?style=for-the-badge&labelColor=111318&logo=nextdotjs&logoColor=EAEAE6)
+[![License: BSL 1.1 / MIT](https://img.shields.io/badge/License-BSL_1.1_%2F_MIT-A84426?style=for-the-badge&labelColor=111318)](LICENSE)
 
 </div>
 
