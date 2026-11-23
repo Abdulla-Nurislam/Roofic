@@ -626,6 +626,11 @@ fn nobody_can_claim_someone_elses_position() {
     let mp = w.manager_pay;
     w.deposit_rent(&manager, mp, 100 * USDC).unwrap();
 
+    let vault_before = w.token_balance(&w.vault);
+    let bob_pay_before = w.token_balance(&w.pay_account(&bob.pubkey()));
+    let alice_pos_before = w.position(&alice.pubkey()).unwrap();
+    let claimed_before = w.property_state().total_rent_claimed;
+
     // Bob signs, but points the instruction at Alice's position
     let mut metas = accounts::ClaimRent {
         config: w.config,
@@ -642,6 +647,12 @@ fn nobody_can_claim_someone_elses_position() {
     let ix = w.ix(metas, instruction::ClaimRent {}.data());
     let err = w.send(ix, &[&bob]).expect_err("position seeds include the signer");
     assert!(err.contains(&framework(ErrorCode::ConstraintSeeds)), "got {err}");
+
+    // State immutability after rejected tx
+    assert_eq!(w.token_balance(&w.vault), vault_before);
+    assert_eq!(w.token_balance(&w.pay_account(&bob.pubkey())), bob_pay_before);
+    assert_eq!(w.position(&alice.pubkey()).unwrap().total_claimed, alice_pos_before.total_claimed);
+    assert_eq!(w.property_state().total_rent_claimed, claimed_before);
 }
 
 // ---------------------------------------------------------------------------
