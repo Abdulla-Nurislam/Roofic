@@ -6,10 +6,21 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: roofic-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  SOLANA_VERSION: 4.3.0
+
 jobs:
   rust-and-python:
     name: Rust Labs & Python Models
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +52,7 @@ jobs:
   node-apps:
     name: TypeScript & Next.js Verification
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
