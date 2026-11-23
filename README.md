@@ -17,7 +17,63 @@
 
 ---
 
-Финальный продукт находится в [`capstone/`](capstone/).
+## О проекте
+
+### Проблема
+Порог входа в доходную недвижимость начинается от \$50 000–\$100 000, оформление сделок занимает недели, а расчёт и распределение арендного дохода остаются непрозрачными для розничного инвестора.
+
+### Решение
+**Roofic** позволяет верифицированному инвестору купить долю доходного объекта недвижимости от **\$100 USDC / PYUSD** и получать арендный доход пропорционально доле через ончейн-аккумулятор $O(1)$.
+- Доли выпускаются как **Token-2022 (`NonTransferable`)** под управлением PDA объекта.
+- Детерминированный модуль скоринга рассчитывает чистую доходность (`bear` / `base` / `bull`) и риск-скор (`0..100`, грейды `A`–`D`), фиксируя `SHA-256` хэш оценки (`valuation_hash`) ончейн.
+- Аварийная пауза и отзыв KYC никогда не блокируют `claim_rent` — накопленный доход инвесторов всегда доступен к выводу.
+
+---
+
+## Архитектура
+
+```mermaid
+flowchart LR
+    subgraph Actors["Роли"]
+        Investor["Инвестор (KYC)"]
+        Issuer["Эмитент / SPV (KYB)"]
+        Manager["УК (Manager)"]
+        Admin["Платформа (Admin)"]
+    end
+
+    subgraph Client["Capstone Web dApp и аналитика"]
+        UI["Next.js App<br/>(Wallet Adapter)"]
+        Scoring["Scoring Engine<br/>(Python + TS, SHA-256)"]
+        Oracles["Pyth PriceUpdateV2<br/>+ Jupiter v6"]
+    end
+
+    subgraph Chain["Solana Devnet · программа roofic"]
+        Config[("PlatformConfig PDA<br/>(fees, pause, payment_mint)")]
+        Kyc[("Investor PDA<br/>(KYC / KYB)")]
+        Prop[("Property PDA<br/>(shares_sold, acc_rent, hash)")]
+        Pos[("Position PDA<br/>(shares, reward_debt)")]
+        Vault[("Rent Vault PDA<br/>(USDC / PYUSD)")]
+        Shares["Token-2022 Mint<br/>(NonTransferable)"]
+    end
+
+    Investor --> UI
+    Issuer --> UI
+    Manager --> UI
+    Admin --> UI
+
+    UI --> Scoring
+    UI --> Oracles
+    UI --> Config
+    UI --> Kyc
+    UI --> Prop
+    Prop --> Shares
+    Prop --> Vault
+    Prop --> Pos
+```
+
+Подробная схема PDA, формулы распределения аренды и проектные решения — в [`docs/architecture.md`](docs/architecture.md). Модель рисков и угроз — в [`docs/risk-and-security-model.md`](docs/risk-and-security-model.md).
+
+---
 
 ## Карта курса
 
