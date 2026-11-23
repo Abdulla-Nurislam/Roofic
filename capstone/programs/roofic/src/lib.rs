@@ -484,31 +484,31 @@ pub struct RevokeInvestor<'info> {
 #[derive(Accounts)]
 #[instruction(id: u64)]
 pub struct CreateProperty<'info> {
-    #[account(seeds = [b"config"], bump = config.bump)]
+    #[account(seeds = [CONFIG_SEED], bump = config.bump)]
     pub config: Account<'info, PlatformConfig>,
 
     /// KYB/KYC issuer gate: only wallets approved in the on-chain registry can list properties
-    #[account(seeds = [b"investor", owner.key().as_ref()], bump = owner_kyc.bump)]
+    #[account(seeds = [INVESTOR_SEED, owner.key().as_ref()], bump = owner_kyc.bump)]
     pub owner_kyc: Account<'info, Investor>,
 
     #[account(
         init,
         payer = owner,
         space = 8 + Property::INIT_SPACE,
-        seeds = [b"property", owner.key().as_ref(), &id.to_le_bytes()],
+        seeds = [PROPERTY_SEED, owner.key().as_ref(), &id.to_le_bytes()],
         bump,
     )]
     pub property: Account<'info, Property>,
 
     /// CHECK: PDA created and initialised by this instruction (Token-2022 mint with NonTransferable)
-    #[account(mut, seeds = [b"share_mint", property.key().as_ref()], bump)]
+    #[account(mut, seeds = [SHARE_MINT_SEED, property.key().as_ref()], bump)]
     pub share_mint: UncheckedAccount<'info>,
 
     /// Rent vault: payment-token account owned by the property PDA
     #[account(
         init,
         payer = owner,
-        seeds = [b"vault", property.key().as_ref()],
+        seeds = [VAULT_SEED, property.key().as_ref()],
         bump,
         token::mint = payment_mint,
         token::authority = property,
@@ -528,16 +528,16 @@ pub struct CreateProperty<'info> {
 
 #[derive(Accounts)]
 pub struct BuyShares<'info> {
-    #[account(seeds = [b"config"], bump = config.bump)]
+    #[account(seeds = [CONFIG_SEED], bump = config.bump)]
     pub config: Account<'info, PlatformConfig>,
 
     /// KYC gate: this PDA only exists for wallets the admin approved
-    #[account(seeds = [b"investor", investor.key().as_ref()], bump = investor_record.bump)]
+    #[account(seeds = [INVESTOR_SEED, investor.key().as_ref()], bump = investor_record.bump)]
     pub investor_record: Account<'info, Investor>,
 
     #[account(
         mut,
-        seeds = [b"property", property.owner.as_ref(), &property.id.to_le_bytes()],
+        seeds = [PROPERTY_SEED, property.owner.as_ref(), &property.id.to_le_bytes()],
         bump = property.bump,
         has_one = share_mint @ RooficError::WrongShareMint,
     )]
@@ -550,7 +550,7 @@ pub struct BuyShares<'info> {
         init_if_needed,
         payer = investor,
         space = 8 + Position::INIT_SPACE,
-        seeds = [b"position", property.key().as_ref(), investor.key().as_ref()],
+        seeds = [POSITION_SEED, property.key().as_ref(), investor.key().as_ref()],
         bump,
     )]
     pub position: Box<Account<'info, Position>>,
@@ -587,12 +587,12 @@ pub struct BuyShares<'info> {
 
 #[derive(Accounts)]
 pub struct DepositRent<'info> {
-    #[account(seeds = [b"config"], bump = config.bump)]
+    #[account(seeds = [CONFIG_SEED], bump = config.bump)]
     pub config: Account<'info, PlatformConfig>,
 
     #[account(
         mut,
-        seeds = [b"property", property.owner.as_ref(), &property.id.to_le_bytes()],
+        seeds = [PROPERTY_SEED, property.owner.as_ref(), &property.id.to_le_bytes()],
         bump = property.bump,
         has_one = manager @ RooficError::NotManager,
         has_one = share_mint @ RooficError::WrongShareMint,
@@ -622,12 +622,12 @@ pub struct DepositRent<'info> {
 
 #[derive(Accounts)]
 pub struct ClaimRent<'info> {
-    #[account(seeds = [b"config"], bump = config.bump)]
+    #[account(seeds = [CONFIG_SEED], bump = config.bump)]
     pub config: Account<'info, PlatformConfig>,
 
     #[account(
         mut,
-        seeds = [b"property", property.owner.as_ref(), &property.id.to_le_bytes()],
+        seeds = [PROPERTY_SEED, property.owner.as_ref(), &property.id.to_le_bytes()],
         bump = property.bump,
         has_one = vault @ RooficError::WrongVault,
     )]
@@ -635,7 +635,7 @@ pub struct ClaimRent<'info> {
 
     #[account(
         mut,
-        seeds = [b"position", property.key().as_ref(), investor.key().as_ref()],
+        seeds = [POSITION_SEED, property.key().as_ref(), investor.key().as_ref()],
         bump = position.bump,
         has_one = property,
     )]
