@@ -17,3 +17,26 @@
 - Формат коммитов — **Conventional Commits**: `feat(capstone): ...`, `fix(security): ...`, `docs: ...`, `ci: ...`.
 - Один коммит — одно логическое изменение без «wip» и смешивания несвязанных правок.
 
+## 3. Обязательные локальные проверки перед push
+
+```bash
+# 1. Capstone Anchor-программа + LiteSVM-тесты
+cd capstone && cargo build-sbf --manifest-path programs/roofic/Cargo.toml && cargo test
+
+# 2. Опциональный Devnet smoke-тест (в CI не запускается)
+cd capstone && ROOFIC_DEVNET=1 cargo test devnet_smoke -- --nocapture
+
+# 3. Python-скоринг и финансовая модель
+python3 -m unittest discover -s capstone/scoring -v
+python3 -m unittest discover -s week-13-rwa-design/model -v
+
+# 4. Фронтенд Next.js (Capstone)
+cd capstone/app && npm run typecheck && npm run build
+```
+
+## 4. Правила безопасности и Definition of Done
+
+- **Никогда не коммитьте секреты:** файлы `.env*.local`, `*-keypair.json` с реальными ключами, `.wallets.bin`, `.state/`.
+- Все изменения смарт-контракта должны сопровождаться позитивными и негативными тестами в `LiteSVM` (включая проверку неизменности состояния после отклонённых транзакций).
+- Изменения формул скоринга в `capstone/scoring/engine.py` обязаны синхронно отражаться в `capstone/app/src/lib/scoring.ts` с побайтовым совпадением SHA-256 `valuation_hash`.
+- Перед мержем в `main` все проверки в [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (`ci-ok`) должны быть зелёными.
