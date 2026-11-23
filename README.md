@@ -6,12 +6,12 @@
 
 **Платформа фракционной токенизации арендной недвижимости (RWA) на Solana**
 
-[![Roofic CI](https://img.shields.io/github/actions/workflow/status/Abdulla-Nurislam/Roofic/ci.yml?branch=main&style=for-the-badge&label=Roofic%20CI&labelColor=111318&color=10B981&logo=githubactions&logoColor=10B981)](https://github.com/Abdulla-Nurislam/Roofic/actions/workflows/ci.yml)
+[![Roofic CI](https://img.shields.io/github/actions/workflow/status/Abdulla-Nurislam/Roofic/ci.yml?branch=main&style=for-the-badge&label=Roofic%20CI&labelColor=111318&logo=githubactions&logoColor=10B981)](https://github.com/Abdulla-Nurislam/Roofic/actions/workflows/ci.yml)
 ![Solana Devnet](https://img.shields.io/badge/Solana-Devnet-10B981?style=for-the-badge&labelColor=111318&logo=solana&logoColor=10B981)
 ![Anchor 1.2.0](https://img.shields.io/badge/Anchor-1.2.0-27272A?style=for-the-badge&labelColor=111318&logo=rust&logoColor=EAEAE6)
 ![SPL Token-2022](https://img.shields.io/badge/SPL-Token--2022-27272A?style=for-the-badge&labelColor=111318&logo=solana&logoColor=10B981)
 ![Next.js](https://img.shields.io/badge/Next.js-App_Router-27272A?style=for-the-badge&labelColor=111318&logo=nextdotjs&logoColor=EAEAE6)
-[![License: BSL 1.1 / MIT](https://img.shields.io/badge/License-BSL_1.1_%2F_MIT-A84426?style=for-the-badge&labelColor=111318)](LICENSE)
+[![License: BSL 1.1](https://img.shields.io/badge/License-BSL_1.1-A84426?style=for-the-badge&labelColor=111318)](LICENSE)
 
 </div>
 
@@ -156,9 +156,6 @@ cd capstone/app && npm ci && npm run dev
 
 ## Лицензия
 
-Проект использует комбинированное лицензирование (**BSL 1.1 + MIT** — подробности в [`LICENSE`](LICENSE)):
-
-| Компонент | Лицензия | Назначение |
-|---|---|---|
-| Смарт-контракты и скоринг (`capstone/programs/`, `week-11-cpi/programs/`, `week-08-mvp/programs/`, `capstone/scoring/`, `week-13-rwa-design/model/`) | **BSL 1.1** *(переход в MIT — `2029-11-24`)* | Код открыт для аудита, проверки безопасности и обучения, но защищён от прямых коммерческих форков |
-| Клиентские dApp, SDK-обёртки, лабораторные и документация (`capstone/app/`, `week-03`–`week-10`, `week-12`, `docs/`) | **MIT** | Свободная интеграция, форки и переиспользование в сторонних интерфейсах и кошельках |
+Исходный код проекта распространяется под лицензией **Business Source License 1.1 (BSL 1.1)** — подробности в [`LICENSE`](LICENSE).
+- Код открыт для аудита безопасности, обучения и тестирования в локальной сети / **Solana Devnet**.
+- Коммерческий продакшн-деплой без отдельного соглашения ограничен до **24 ноября 2029 года** (`Change Date: 2029-11-24`), после чего код автоматически переходит под открытую лицензию **MIT**.
