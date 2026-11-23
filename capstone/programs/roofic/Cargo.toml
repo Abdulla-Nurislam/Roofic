@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Roofic capstone — tokenized rental property: KYC-gated share tokens, USDC payments, pro-rata rent, platform fees and pause"
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
 
 [lib]
 crate-type = ["cdylib", "lib"]

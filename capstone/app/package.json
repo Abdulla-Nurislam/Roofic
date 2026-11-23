@@ -1,6 +1,7 @@
 {
   "name": "roofic-capstone-app",
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "private": true,
   "scripts": {
     "sync-idl": "mkdir -p src/idl && cp ../target/idl/roofic.json src/idl/ && cp ../target/types/roofic.ts src/idl/",

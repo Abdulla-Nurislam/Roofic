@@ -11,7 +11,7 @@
 ![Anchor 1.2.0](https://img.shields.io/badge/Anchor-1.2.0-27272A?style=for-the-badge&labelColor=111318&logo=rust&logoColor=EAEAE6)
 ![SPL Token-2022](https://img.shields.io/badge/SPL-Token--2022-27272A?style=for-the-badge&labelColor=111318&logo=solana&logoColor=10B981)
 ![Next.js](https://img.shields.io/badge/Next.js-App_Router-27272A?style=for-the-badge&labelColor=111318&logo=nextdotjs&logoColor=EAEAE6)
-[![License: BSL 1.1](https://img.shields.io/badge/License-BSL_1.1-A84426?style=for-the-badge&labelColor=111318)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-10B981?style=for-the-badge&labelColor=111318)](LICENSE)
 
 </div>
 
@@ -156,6 +156,7 @@ cd capstone/app && npm ci && npm run dev
 
 ## Лицензия
 
-Исходный код проекта распространяется под лицензией **Business Source License 1.1 (BSL 1.1)** — подробности в [`LICENSE`](LICENSE).
-- Код открыт для аудита безопасности, обучения и тестирования в локальной сети / **Solana Devnet**.
-- Коммерческий продакшн-деплой без отдельного соглашения ограничен до **24 ноября 2029 года** (`Change Date: 2029-11-24`), после чего код автоматически переходит под открытую лицензию **MIT**.
+Проект распространяется под лицензией **Apache License 2.0** — полный текст в [`LICENSE`](LICENSE), атрибуция авторов и правила использования товарного знака — в [`NOTICE`](NOTICE).
+- Включает явное предоставление патентных прав и защиту от патентных исков (Раздел 3 Apache 2.0).
+- При распространении форков или производных продуктов сохранение атрибуции из файла [`NOTICE`](NOTICE) обязательно (Раздел 4(d) Apache 2.0).
+- Товарный знак и бренд **Roofic** защищены и не передаются по лицензии (Раздел 6 Apache 2.0).
