@@ -170,3 +170,20 @@ jobs:
           npm run typecheck
           npm run build
 
+  ci-ok:
+    name: All Checks Passed
+    if: always()
+    needs: [rust-and-python, anchor-litesvm, node-apps]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in
+              success) ;;
+              *) exit 1 ;;
+            esac
+          done
