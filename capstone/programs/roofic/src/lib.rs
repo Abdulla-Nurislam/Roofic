@@ -425,7 +425,7 @@ fn pay<'info>(
 // ---------------------------------------------------------------------------
 #[derive(Accounts)]
 pub struct InitializePlatform<'info> {
-    #[account(init, payer = admin, space = 8 + PlatformConfig::INIT_SPACE, seeds = [b"config"], bump)]
+    #[account(init, payer = admin, space = 8 + PlatformConfig::INIT_SPACE, seeds = [CONFIG_SEED], bump)]
     pub config: Account<'info, PlatformConfig>,
     pub payment_mint: InterfaceAccount<'info, Mint>,
     /// Platform treasury: a token account of the payment mint
@@ -444,14 +444,14 @@ pub struct InitializePlatform<'info> {
 
 #[derive(Accounts)]
 pub struct AdminOnly<'info> {
-    #[account(mut, seeds = [b"config"], bump = config.bump, has_one = admin @ RooficError::NotAdmin)]
+    #[account(mut, seeds = [CONFIG_SEED], bump = config.bump, has_one = admin @ RooficError::NotAdmin)]
     pub config: Account<'info, PlatformConfig>,
     pub admin: Signer<'info>,
 }
 
 #[derive(Accounts)]
 pub struct SetAdmin<'info> {
-    #[account(mut, seeds = [b"config"], bump = config.bump, has_one = admin @ RooficError::NotAdmin)]
+    #[account(mut, seeds = [CONFIG_SEED], bump = config.bump, has_one = admin @ RooficError::NotAdmin)]
     pub config: Account<'info, PlatformConfig>,
     #[account(token::mint = config.payment_mint)]
     pub treasury: InterfaceAccount<'info, TokenAccount>,
@@ -460,9 +460,9 @@ pub struct SetAdmin<'info> {
 
 #[derive(Accounts)]
 pub struct ApproveInvestor<'info> {
-    #[account(seeds = [b"config"], bump = config.bump, has_one = admin @ RooficError::NotAdmin)]
+    #[account(seeds = [CONFIG_SEED], bump = config.bump, has_one = admin @ RooficError::NotAdmin)]
     pub config: Account<'info, PlatformConfig>,
-    #[account(init, payer = admin, space = 8 + Investor::INIT_SPACE, seeds = [b"investor", wallet.key().as_ref()], bump)]
+    #[account(init, payer = admin, space = 8 + Investor::INIT_SPACE, seeds = [INVESTOR_SEED, wallet.key().as_ref()], bump)]
     pub investor_record: Account<'info, Investor>,
     /// CHECK: only its address is used, as the PDA seed and the recorded wallet
     pub wallet: UncheckedAccount<'info>,
@@ -473,9 +473,9 @@ pub struct ApproveInvestor<'info> {
 
 #[derive(Accounts)]
 pub struct RevokeInvestor<'info> {
-    #[account(seeds = [b"config"], bump = config.bump, has_one = admin @ RooficError::NotAdmin)]
+    #[account(seeds = [CONFIG_SEED], bump = config.bump, has_one = admin @ RooficError::NotAdmin)]
     pub config: Account<'info, PlatformConfig>,
-    #[account(mut, close = admin, seeds = [b"investor", investor_record.wallet.as_ref()], bump = investor_record.bump)]
+    #[account(mut, close = admin, seeds = [INVESTOR_SEED, investor_record.wallet.as_ref()], bump = investor_record.bump)]
     pub investor_record: Account<'info, Investor>,
     #[account(mut)]
     pub admin: Signer<'info>,
