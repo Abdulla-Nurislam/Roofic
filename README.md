@@ -111,27 +111,49 @@ flowchart LR
 
 ---
 
-## Команда и вклад участников
-См. [docs/team.md](docs/team.md).
+## Документация проекта
 
-## Devnet-деплои и ончейн-артефакты
-Все 9 развёрнутых программ, адреса токенов, оракулов Pyth и транзакций: [docs/devnet-deployments.md](docs/devnet-deployments.md).
+| Документ | Содержание |
+|---|---|
+| [`docs/architecture.md`](docs/architecture.md) | Схема PDA, потоки средств, математика $O(1)$ и ключевые проектные решения |
+| [`docs/risk-and-security-model.md`](docs/risk-and-security-model.md) | Модель угроз, защитные инварианты и осознанные trade-offs |
+| [`docs/security-policy.md`](docs/security-policy.md) | Поддерживаемые сети, зона ответственности и порядок сообщения об уязвимостях |
+| [`docs/devnet-deployments.md`](docs/devnet-deployments.md) | Все 9 развёрнутых программ, адреса токенов, Pyth-фидов и Devnet-транзакций |
+| [`docs/team.md`](docs/team.md) | Состав команды Roofic и матрица вклада участников по неделям |
+| [`docs/pitch-and-demo.md`](docs/pitch-and-demo.md) | Сценарий Demo Day (Неделя 15) и технические ответы к защите (Неделя 16) |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Регламент веток, локальные проверки и Definition of Done |
 
-## Требования к окружению
+---
+
+## Быстрый старт и окружение
 
 | Инструмент | Версия |
-|------------|--------|
-| Rust | 1.89+ (`rust-toolchain.toml` в каждой Anchor-программе) |
-| Solana CLI (Agave) | 2.1+ / 3.x |
-| Anchor CLI | 0.32.1 |
-| Node.js | 22.x |
-| Python | 3.10+ |
+|---|---|
+| Rust | `1.89+` (`rust-toolchain.toml` в Anchor-проектах) |
+| Solana CLI (Agave) | `4.x` (`cargo build-sbf`) |
+| Anchor | `1.2.0` (`anchor-lang = 1.2.0`, `anchor-spl = 1.2.2`) |
+| Node.js | `22.x` |
+| Python | `3.10+` |
 
 ```bash
-solana config set --url devnet
-solana-keygen new          # если ещё нет кошелька
-solana airdrop 2           # или https://faucet.solana.com
+# Сборка и интеграционные LiteSVM-тесты Capstone-контракта
+cd capstone
+cargo build-sbf --manifest-path programs/roofic/Cargo.toml
+cargo test
+
+# Опциональный Devnet smoke-тест (читает живые аккаунты в Solana Devnet)
+ROOFIC_DEVNET=1 cargo test devnet_smoke -- --nocapture
+
+# Юнит-тесты Python-скоринга и RWA финмодели
+python3 -m unittest discover -s capstone/scoring -v
+python3 -m unittest discover -s week-13-rwa-design/model -v
+
+# Запуск веб-интерфейса Capstone (http://localhost:3014)
+cd capstone/app && npm ci && npm run dev
 ```
 
+---
+
 ## Лицензия
+
 Проект распространяется под лицензией [MIT](LICENSE).
