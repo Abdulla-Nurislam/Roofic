@@ -976,5 +976,41 @@ fn fee_bearing_payment_mint_is_rejected_at_init() {
     assert!(err.contains(&custom(RooficError::UnsupportedPaymentMint)), "got {err}");
 }
 
+// ---------------------------------------------------------------------------
+// Optional Devnet smoke test (skipped by default / in CI; run with ROOFIC_DEVNET=1)
+// ---------------------------------------------------------------------------
+#[test]
+fn devnet_smoke_checks_deployed_platform_and_properties() {
+    if std::env::var("ROOFIC_DEVNET").ok().as_deref() != Some("1") {
+        return;
+    }
+
+    let rpc = std::env::var("ROOFIC_DEVNET_RPC")
+        .unwrap_or_else(|_| "https://api.devnet.solana.com".to_string());
+    let program_id = roofic::id().to_string();
+    let accounts_to_check = [
+        ("Program", program_id.as_str(), "BPFLoaderUpgradeab1e11111111111111111111111"),
+        ("PlatformConfig", "4RhKLNHHhzAwXLhed7E6ttoSx4vRHZWeEfEHMucHVwTn", program_id.as_str()),
+        ("Almaty Loft #1", "Den4nnxLdHra37Rh8e3qwygKoE8pMDC3PU5KQaCVkrFY", program_id.as_str()),
+    ];
+
+    for (label, address, expected_owner) in accounts_to_check {
+        let payload = format!(
+            r#"{{"jsonrpc":"2.0","id":1,"method":"getAccountInfo","params":["{address}",{{"encoding":"base64"}}]}}"#
+        );
+        let out = std::process::Command::new("curl")
+            .args(["-sSf", "-X", "POST", &rpc, "-H", "Content-Type: application/json", "-d", &payload])
+            .output()
+            .expect("curl must be installed for ROOFIC_DEVNET=1 smoke test");
+        assert!(out.status.success(), "{label} RPC request failed: {}", String::from_utf8_lossy(&out.stderr));
+        let body = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            body.contains(expected_owner),
+            "{label} ({address}) missing or wrong owner in devnet response: {body}"
+        );
+    }
+}
+
+
 
 
