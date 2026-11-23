@@ -56,9 +56,35 @@ jobs:
         run: python3 -m unittest -v
 
   anchor-litesvm:
-    name: Anchor SBF Build & LiteSVM Tests
+    name: Anchor SBF (${{ matrix.label }})
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: week-05-counter
+            dir: week-05-anchor-counter
+            build: cargo build-sbf
+          - label: week-06-pda
+            dir: week-06-pda-profile
+            build: cargo build-sbf
+          - label: week-08-mvp
+            dir: week-08-mvp
+            build: cargo build-sbf
+          - label: week-11-cpi
+            dir: week-11-cpi
+            build: |
+              cargo build-sbf --manifest-path programs/roofic_shares/Cargo.toml
+              cargo build-sbf --manifest-path programs/roofic_portfolio/Cargo.toml
+          - label: week-12-security
+            dir: week-12-security-lab
+            build: |
+              cargo build-sbf --manifest-path programs/exploit_lab/Cargo.toml
+              cargo build-sbf --manifest-path programs/evil_program/Cargo.toml
+          - label: week-14-capstone
+            dir: capstone
+            build: cargo build-sbf --manifest-path programs/roofic/Cargo.toml
     steps:
       - uses: actions/checkout@v4
 
@@ -83,50 +109,13 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: |
-            week-05-anchor-counter -> target
-            week-06-pda-profile -> target
-            week-08-mvp -> target
-            week-11-cpi -> target
-            week-12-security-lab -> target
-            capstone -> target
+          workspaces: ${{ matrix.dir }}
+          shared-key: ${{ matrix.label }}
 
-      - name: Week 5 — Anchor Counter (SBF + LiteSVM)
-        working-directory: week-05-anchor-counter
+      - name: Build SBF & run LiteSVM tests
+        working-directory: ${{ matrix.dir }}
         run: |
-          cargo build-sbf
-          cargo test
-
-      - name: Week 6 — PDA Profile (SBF + LiteSVM)
-        working-directory: week-06-pda-profile
-        run: |
-          cargo build-sbf
-          cargo test
-
-      - name: Week 8 — Roofic MVP (SBF + LiteSVM)
-        working-directory: week-08-mvp
-        run: |
-          cargo build-sbf
-          cargo test
-
-      - name: Week 11 — CPI Shares & Portfolio (SBF + LiteSVM)
-        working-directory: week-11-cpi
-        run: |
-          cargo build-sbf --manifest-path programs/roofic_shares/Cargo.toml
-          cargo build-sbf --manifest-path programs/roofic_portfolio/Cargo.toml
-          cargo test
-
-      - name: Week 12 — Security & Exploit Lab (SBF + LiteSVM)
-        working-directory: week-12-security-lab
-        run: |
-          cargo build-sbf --manifest-path programs/exploit_lab/Cargo.toml
-          cargo build-sbf --manifest-path programs/evil_program/Cargo.toml
-          cargo test
-
-      - name: Week 14 — Capstone Roofic Program (SBF + LiteSVM)
-        working-directory: capstone
-        run: |
-          cargo build-sbf --manifest-path programs/roofic/Cargo.toml
+          ${{ matrix.build }}
           cargo test
 
   node-apps:
