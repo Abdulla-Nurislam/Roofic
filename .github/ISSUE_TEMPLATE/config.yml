@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "Сообщить об уязвимости безопасности (Приватно)"
+    url: "https://github.com/Abdulla-Nurislam/Roofic/security/advisories/new"
+    about: "Не публикуйте уязвимости в открытых issues — используйте GitHub Security Advisories."
+  - name: "Документация и архитектура Roofic"
+    url: "https://github.com/Abdulla-Nurislam/Roofic/blob/main/docs/architecture.md"
+    about: "Схема PDA, формулы распределения аренды и проектные решения."

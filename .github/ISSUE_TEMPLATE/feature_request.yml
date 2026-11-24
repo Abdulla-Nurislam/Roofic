@@ -1,0 +1,57 @@
+name: "Feature Request"
+description: "Предложить новую функцию, улучшение архитектуры, UI или документации"
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо за идею по развитию **Roofic**! Перед созданием предложения рекомендуем ознакомиться с [`docs/architecture.md`](https://github.com/Abdulla-Nurislam/Roofic/blob/main/docs/architecture.md) и [`CONTRIBUTING.md`](https://github.com/Abdulla-Nurislam/Roofic/blob/main/CONTRIBUTING.md).
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Область улучшения
+      options:
+        - capstone/programs/roofic (Anchor-контракт)
+        - capstone/app (Next.js веб-приложение / UX / Accessibility)
+        - capstone/scoring (Модель скоринга и риск-аналитика)
+        - DeFi / Оракулы (Pyth / Jupiter)
+        - Тестирование и CI/CD
+        - Документация
+        - Другое
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какую проблему решает предложение?
+      description: Опишите сценарий использования или ограничение текущей реализации.
+      placeholder: Сейчас невозможно... / Было бы удобно, если...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Предлагаемое решение
+      description: Как, по вашему мнению, должна работать новая функциональность?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Рассмотренные альтернативы
+      description: Есть ли альтернативные подходы или компромиссы, которые стоит учесть?
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Дополнительный контекст
+      description: Ссылки на спецификации, макеты, расчёты или связанные PR/issues.
+    validations:
+      required: false
