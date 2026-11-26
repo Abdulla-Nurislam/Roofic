@@ -802,6 +802,31 @@ fn rent_deposit_rejects_zero_amount_and_empty_property() {
     assert_eq!(w.property_state().shares_sold, 0);
 }
 
+#[test]
+fn updated_sale_fee_applies_to_the_next_purchase() {
+    let mut w = world(legacy_token());
+    let admin = w.admin.insecure_clone();
+    let alice = alice(&w);
+    let new_sale_fee_bps: u16 = 500;
+
+    let ix = w.ix(
+        accounts::AdminOnly { config: w.config, admin: admin.pubkey() }.to_account_metas(None),
+        instruction::SetFees { rent_fee_bps: RENT_FEE_BPS, sale_fee_bps: new_sale_fee_bps }.data(),
+    );
+    w.send(ix, &[&admin]).expect("admin updates fees");
+
+    let before = w.token_balance(&w.pay_account(&alice.pubkey()));
+    w.buy(&alice, 10).expect("buy after fee change");
+
+    let cost = 10 * PRICE;
+    let fee = cost * new_sale_fee_bps as u64 / 10_000;
+    assert_eq!(fee, 50 * USDC);
+    assert_ne!(fee, cost * SALE_FEE_BPS as u64 / 10_000, "the original 1.5% fee must not apply");
+    assert_eq!(before - w.token_balance(&w.pay_account(&alice.pubkey())), cost);
+    assert_eq!(w.token_balance(&w.owner_pay), cost - fee);
+    assert_eq!(w.token_balance(&w.treasury), fee);
+}
+
 // ---------------------------------------------------------------------------
 // Money conservation, both payment programs
 // ---------------------------------------------------------------------------
