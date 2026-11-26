@@ -784,6 +784,24 @@ fn listing_rejects_empty_name_and_zero_shares_or_price() {
     assert_eq!(w.property_state().id, 1, "the valid listing stays");
 }
 
+#[test]
+fn rent_deposit_rejects_zero_amount_and_empty_property() {
+    let mut w = world(legacy_token());
+    let manager = w.manager.insecure_clone();
+    let manager_pay = w.manager_pay;
+    let before = w.token_balance(&manager_pay);
+
+    let err = w.deposit_rent(&manager, manager_pay, 0).expect_err("zero amount");
+    assert!(err.contains(&custom(RooficError::InvalidAmount)), "got {err}");
+    assert_eq!(w.token_balance(&manager_pay), before, "zero deposit must not move funds");
+
+    let err = w.deposit_rent(&manager, manager_pay, USDC).expect_err("no shareholders");
+    assert!(err.contains(&custom(RooficError::NoShareholders)), "got {err}");
+    assert_eq!(w.token_balance(&manager_pay), before, "rejected deposit must not move funds");
+    assert_eq!(w.token_balance(&w.vault), 0);
+    assert_eq!(w.property_state().shares_sold, 0);
+}
+
 // ---------------------------------------------------------------------------
 // Money conservation, both payment programs
 // ---------------------------------------------------------------------------
