@@ -86,7 +86,7 @@ npm run dev           # http://localhost:3014
 
 ## Тесты смарт-контракта (LiteSVM)
 
-В [`programs/roofic/tests/roofic_test.rs`](programs/roofic/tests/roofic_test.rs) — **22 интеграционных теста** LiteSVM, проверяющих все инварианты, роли, коды ошибок, защиту от эксплойтов и закон сохранения денег как для классического **SPL Token (USDC)**, так и для **Token-2022 (PYUSD)**. Отдельно в том же файле лежит `devnet_smoke_checks_deployed_platform_and_properties`: без `ROOFIC_DEVNET=1` он сразу завершается, в CI не запускается и в таблицу ниже не входит.
+В [`programs/roofic/tests/roofic_test.rs`](programs/roofic/tests/roofic_test.rs) — **29 интеграционных тестов** LiteSVM, проверяющих все инварианты, роли, коды ошибок, защиту от эксплойтов и закон сохранения денег как для классического **SPL Token (USDC)**, так и для **Token-2022 (PYUSD)**. Отдельно в том же файле лежит `devnet_smoke_checks_deployed_platform_and_properties`: без `ROOFIC_DEVNET=1` он сразу завершается, в CI не запускается и в таблицу ниже не входит.
 
 ```bash
 anchor build
@@ -118,3 +118,10 @@ cargo clippy --all-targets -- -D warnings
 | 20 | `revoked_investor_can_still_claim_accrued_rent` | Отзыв KYC блокирует новые покупки, но сохраняет право вывести ранее начисленный доход через `claim_rent` |
 | 21 | `admin_can_rotate_authority_and_treasury` | Инструкция `set_admin` атомарно передаёт права администратора и казну новому ключу |
 | 22 | `fee_bearing_payment_mint_is_rejected_at_init` | Токен с `TransferFeeConfig` отвергается при `initialize_platform` (`UnsupportedPaymentMint`), предотвращая рассинхронизацию баланса `vault` |
+| 23 | `pause_blocks_create_property` | Пауза блокирует `create_property`: новый объект, share mint и vault не создаются |
+| 24 | `listing_rejects_empty_name_and_zero_shares_or_price` | Пустое имя, ноль долей и нулевая цена дают `InvalidName`, `InvalidShares` и `InvalidPrice` |
+| 25 | `rent_deposit_rejects_zero_amount_and_empty_property` | Нулевая сумма аренды и депозит без держателей отвергаются, баланс manager не меняется |
+| 26 | `updated_sale_fee_applies_to_the_next_purchase` | `set_fees` меняет дележ следующей покупки |
+| 27 | `listing_rejects_a_name_longer_than_48_bytes` | Имя длиннее 48 байт отвергается, имя ровно из 48 байт сохраняется |
+| 28 | `buy_rejects_share_mint_that_does_not_belong_to_the_property` | Чужой share mint даёт `WrongShareMint`, оплата и `shares_sold` не меняются |
+| 29 | `deposit_rejects_vault_that_does_not_belong_to_the_property` | Чужой vault даёт `WrongVault`, баланс manager и настоящий сейф не меняются |
