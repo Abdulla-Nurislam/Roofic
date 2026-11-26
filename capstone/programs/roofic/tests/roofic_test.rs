@@ -680,6 +680,49 @@ fn pause_blocks_buying_and_rent_but_never_claims() {
     w.buy(&bob, 1).expect("unpaused");
 }
 
+#[test]
+fn pause_blocks_create_property() {
+    let mut w = world(legacy_token());
+    let admin = w.admin.insecure_clone();
+    let owner = w.owner.insecure_clone();
+    w.set_paused(true, &admin).expect("admin pauses");
+
+    let id = 2u64;
+    let prop = pda(&[b"property", owner.pubkey().as_ref(), &id.to_le_bytes()]);
+    let share_mint = pda(&[b"share_mint", prop.as_ref()]);
+    let vault = pda(&[b"vault", prop.as_ref()]);
+    let ix = w.ix(
+        accounts::CreateProperty {
+            config: w.config,
+            owner_kyc: pda(&[b"investor", owner.pubkey().as_ref()]),
+            property: prop,
+            share_mint,
+            vault,
+            payment_mint: w.payment_mint,
+            owner: owner.pubkey(),
+            share_token_program: token_2022(),
+            payment_token_program: w.payment_program,
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        instruction::CreateProperty {
+            id,
+            name: "Paused Listing".into(),
+            total_shares: TOTAL_SHARES,
+            price_per_share: PRICE,
+            manager: w.manager.pubkey(),
+            valuation_hash: [9u8; 32],
+        }
+        .data(),
+    );
+    let err = w.send(ix, &[&owner]).expect_err("create_property while paused");
+    assert!(err.contains(&custom(RooficError::Paused)), "got {err}");
+    assert!(w.svm.get_account(&prop).is_none(), "paused listing must not be stored");
+    assert!(w.svm.get_account(&share_mint).is_none(), "share mint must not be stored");
+    assert!(w.svm.get_account(&vault).is_none(), "vault must not be stored");
+    assert_eq!(w.property_state().id, 1, "the listing created before the pause stays");
+}
+
 // ---------------------------------------------------------------------------
 // Money conservation, both payment programs
 // ---------------------------------------------------------------------------
