@@ -937,6 +937,32 @@ fn buy_rejects_zero_shares() {
     assert!(w.position(&alice.pubkey()).is_none(), "a rejected buy must not open a position");
 }
 
+#[test]
+fn updated_rent_fee_applies_to_the_next_deposit() {
+    let mut w = world(legacy_token());
+    let admin = w.admin.insecure_clone();
+    let alice = alice(&w);
+    let manager = w.manager.insecure_clone();
+    w.buy(&alice, 10).expect("shareholder");
+
+    let new_rent_fee_bps: u16 = 500;
+    let ix = w.ix(
+        accounts::AdminOnly { config: w.config, admin: admin.pubkey() }.to_account_metas(None),
+        instruction::SetFees { rent_fee_bps: new_rent_fee_bps, sale_fee_bps: SALE_FEE_BPS }.data(),
+    );
+    w.send(ix, &[&admin]).expect("admin updates rent fee");
+
+    let treasury_before = w.token_balance(&w.treasury);
+    let mp = w.manager_pay;
+    w.deposit_rent(&manager, mp, 100 * USDC).expect("deposit");
+
+    let fee = 100 * USDC * new_rent_fee_bps as u64 / 10_000;
+    assert_eq!(fee, 5 * USDC);
+    assert_ne!(fee, 100 * USDC * RENT_FEE_BPS as u64 / 10_000, "the original 1% rent fee must not apply");
+    assert_eq!(w.token_balance(&w.treasury) - treasury_before, fee);
+    assert_eq!(w.token_balance(&w.vault), 95 * USDC);
+}
+
 // ---------------------------------------------------------------------------
 // Money conservation, both payment programs
 // ---------------------------------------------------------------------------
