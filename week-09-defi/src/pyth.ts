@@ -86,6 +86,8 @@ export async function getPrice(
   const p = decodePriceUpdateV2(acc.data);
   if (p.verification !== "Full") throw new Error("Цена не полностью верифицирована Wormhole guardians");
   if (p.ageSec > maxAgeSec) throw new Error(`Цена устарела: ${p.ageSec}s > ${maxAgeSec}s`);
+  // Без этой проверки отрицательная цена проходит: conf / price < 0
+  if (!(p.price > 0)) throw new Error(`Некорректная цена оракула: ${p.price}`);
   if (p.conf / p.price > maxConfRatio) throw new Error(`Слишком широкий доверительный интервал: ±${p.conf}`);
   return p;
 }

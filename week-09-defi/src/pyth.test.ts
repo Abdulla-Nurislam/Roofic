@@ -105,6 +105,13 @@ describe("Pyth PriceUpdateV2 decoder & 5 oracle safety checks", () => {
     );
   });
 
+  it("rejects zero and negative prices", async () => {
+    for (const price of [0n, -150_00000000n]) {
+      const conn = mockConnection(PYTH_RECEIVER, buildPriceUpdateV2Buffer({ price, conf: 0n }));
+      await assert.rejects(() => getPrice(conn, PublicKey.unique()), /Некорректная цена/);
+    }
+  });
+
   it("rejects wide confidence interval (conf / price > maxConfRatio)", async () => {
     const conn = mockConnection(
       PYTH_RECEIVER,
