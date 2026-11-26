@@ -4,7 +4,7 @@ import { BN, type ProgramAccount, type IdlAccounts } from "@anchor-lang/core";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { LAMPORTS_PER_SOL, PublicKey, SystemProgram } from "@solana/web3.js";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RooficMvp } from "@/idl/roofic_mvp";
 import {
   explorerTx,
@@ -34,24 +34,36 @@ export default function Home() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [positions, setPositions] = useState<Record<string, Position>>({});
   const [loading, setLoading] = useState(true);
+  const [rpcError, setRpcError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast>(null);
+  const refreshSeqRef = useRef(0);
 
   const refresh = useCallback(async () => {
+    const seq = ++refreshSeqRef.current;
     try {
+      setRpcError(null);
       const all = await reader.account.property.all();
+      if (seq !== refreshSeqRef.current) return;
       all.sort((a, b) => b.account.sharesSold.cmp(a.account.sharesSold));
       setProperties(all);
       if (publicKey) {
         const mine = await reader.account.position.all([
           { memcmp: { offset: 8, bytes: publicKey.toBase58() } },
         ]);
+        if (seq !== refreshSeqRef.current) return;
         setPositions(Object.fromEntries(mine.map((p) => [p.account.property.toBase58(), p.account])));
-      } else setPositions({});
+      } else {
+        setPositions({});
+      }
     } catch (e) {
+      if (seq !== refreshSeqRef.current) return;
       console.error(e);
+      setRpcError(e instanceof Error ? e.message : "Ошибка чтения Solana RPC");
     } finally {
-      setLoading(false);
+      if (seq === refreshSeqRef.current) {
+        setLoading(false);
+      }
     }
   }, [reader, publicKey]);
 
@@ -182,7 +194,14 @@ export default function Home() {
             </div>
           </div>
 
-          {loading ? (
+          {rpcError ? (
+            <div className="alert-error">
+              Ошибка RPC: {rpcError}{" "}
+              <button type="button" className="btn ghost" style={{ marginInlineStart: 8 }} onClick={refresh}>
+                Повторить
+              </button>
+            </div>
+          ) : loading ? (
             <div className="empty">Чтение аккаунтов из Solana Devnet…</div>
           ) : properties.length === 0 ? (
             <div className="empty">В реестре нет объектов. Зарегистрируйте объект в секции листинга ниже.</div>
@@ -296,16 +315,22 @@ export default function Home() {
         </footer>
 
         {toast && (
-          <div className={`toast ${toast.kind}`} role="status">
-            <span className="mono">{toast.kind === "ok" ? "[OK]" : "[ERR]"}</span> {toast.text}
+          <div className={`toast ${toast.kind}`} role="status" aria-live="polite">
+            <span className="mono">{toast.kind === "ok" ? "[OK]" : "[ERR]"}</span>
+            <span>{toast.text}</span>
             {toast.sig && (
-              <>
-                {" · "}
-                <a href={explorerTx(toast.sig)} target="_blank" rel="noreferrer" className="mono">
-                  Explorer ↗
-                </a>
-              </>
+              <a href={explorerTx(toast.sig)} target="_blank" rel="noreferrer" className="mono">
+                Explorer ↗
+              </a>
             )}
+            <button
+              type="button"
+              className="toast-close"
+              onClick={() => setToast(null)}
+              aria-label="Закрыть уведомление"
+            >
+              ×
+            </button>
           </div>
         )}
       </main>
@@ -324,20 +349,33 @@ function CreateProperty({
   const [location, setLocation] = useState("Almaty, Kazakhstan");
   const [shares, setShares] = useState(1000);
   const [price, setPrice] = useState(0.01);
+
+  const nameBytes = new TextEncoder().encode(name.trim()).length;
+  const locationBytes = new TextEncoder().encode(location.trim()).length;
+  const validForm =
+    nameBytes >= 1 &&
+    nameBytes <= 48 &&
+    locationBytes <= 64 &&
+    Number.isInteger(shares) &&
+    shares >= 1 &&
+    Number.isFinite(price) &&
+    price > 0;
+
   return (
     <form
       className="bento-cell form-card"
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit({ name, location, shares, price });
+        if (!validForm) return;
+        onSubmit({ name: name.trim(), location: location.trim(), shares, price });
       }}
     >
       <label className="field">
-        Название
+        Название ({nameBytes}/48 байт)
         <input id="create-name" className="input" value={name} maxLength={48} onChange={(e) => setName(e.target.value)} />
       </label>
       <label className="field">
-        Локация
+        Локация ({locationBytes}/64 байт)
         <input
           id="create-location"
           className="input"
@@ -369,7 +407,7 @@ function CreateProperty({
           onChange={(e) => setPrice(+e.target.value)}
         />
       </label>
-      <button id="create-submit" className="btn" disabled={busy === "create" || !name}>
+      <button id="create-submit" className="btn" disabled={busy === "create" || !validForm}>
         {busy === "create" ? "Отправка…" : "Создать объект"}
       </button>
     </form>
@@ -397,17 +435,25 @@ function PropertyCard({
   onDeposit: (sol: number) => void;
   onClaim: () => void;
 }) {
-  const [shares, setShares] = useState(10);
-  const [rent, setRent] = useState(0.05);
   const a = p.account;
   const key = p.publicKey.toBase58();
   const isOwner = me?.equals(a.authority) ?? false;
   const sold = Number(a.sharesSold.toString());
   const total = Number(a.totalShares.toString());
+  const remaining = Math.max(0, total - sold);
   const pct = total ? (sold / total) * 100 : 0;
   const claimable = position
     ? pendingRent(position.shares, a.accRentPerShare, position.rewardDebt, position.unclaimed)
     : null;
+
+  const [shares, setShares] = useState(() => Math.min(10, Math.max(1, remaining)));
+  const [rent, setRent] = useState(0.05);
+
+  useEffect(() => {
+    if (remaining > 0 && shares > remaining) {
+      setShares(remaining);
+    }
+  }, [remaining, shares]);
 
   return (
     <article className={`bento-cell ${spanClass}`}>

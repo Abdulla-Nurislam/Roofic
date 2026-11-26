@@ -120,7 +120,6 @@ a:hover {
   display: flex;
   align-items: safe center;
   flex-wrap: wrap;
-  flex-wrap: balance;
   gap: 4px;
 }
 
@@ -203,6 +202,7 @@ h1, h2, h3, h4 {
 .section-block {
   padding-block: 40px;
   border-block-end: 1px solid var(--border);
+  scroll-margin-top: 84px;
 }
 
 .section-block:last-of-type {
@@ -511,17 +511,46 @@ label.field {
   position: fixed;
   inset-inline-end: 24px;
   inset-block-end: 24px;
-  max-inline-size: 420px;
+  max-inline-size: 440px;
   padding: 12px 16px;
   z-index: 50;
   background-color: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font-size: 0.84rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .toast.error { border-color: var(--danger); }
 .toast.ok { border-color: var(--emerald); }
+
+.toast-close {
+  margin-inline-start: auto;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.toast-close:hover {
+  color: var(--text);
+  background-color: var(--surface-hover);
+}
+
+.alert-error {
+  font-size: 0.8rem;
+  color: var(--danger);
+  background-color: var(--danger-tint);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
 
 .footer {
   color: var(--muted);
