@@ -876,6 +876,54 @@ fn buy_rejects_share_mint_that_does_not_belong_to_the_property() {
     assert_eq!(w.supply(), 0);
 }
 
+#[test]
+fn deposit_rejects_vault_that_does_not_belong_to_the_property() {
+    let mut w = world(legacy_token());
+    let alice = alice(&w);
+    let manager = w.manager.insecure_clone();
+    w.buy(&alice, 10).expect("need a shareholder so the body would otherwise accept rent");
+
+    let decoy = Pubkey::new_unique();
+    w.svm
+        .set_account(
+            decoy,
+            Account {
+                lamports: 10_000_000,
+                data: token_account_bytes(&w.payment_mint, &w.property, 0),
+                owner: w.payment_program,
+                executable: false,
+                rent_epoch: 0,
+            },
+        )
+        .unwrap();
+
+    let mut metas = accounts::DepositRent {
+        config: w.config,
+        property: w.property,
+        share_mint: w.share_mint,
+        vault: w.vault,
+        payment_mint: w.payment_mint,
+        manager_payment: w.manager_pay,
+        treasury: w.treasury,
+        manager: manager.pubkey(),
+        share_token_program: token_2022(),
+        payment_token_program: w.payment_program,
+    }
+    .to_account_metas(None);
+    for meta in &mut metas {
+        if meta.pubkey == w.vault {
+            meta.pubkey = decoy;
+        }
+    }
+    let before = w.token_balance(&w.manager_pay);
+    let vault_before = w.token_balance(&w.vault);
+    let ix = w.ix(metas, instruction::DepositRent { amount: USDC }.data());
+    let err = w.send(ix, &[&manager]).expect_err("foreign vault");
+    assert!(err.contains(&custom(RooficError::WrongVault)), "got {err}");
+    assert_eq!(w.token_balance(&w.manager_pay), before);
+    assert_eq!(w.token_balance(&w.vault), vault_before);
+}
+
 // ---------------------------------------------------------------------------
 // Money conservation, both payment programs
 // ---------------------------------------------------------------------------
