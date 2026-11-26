@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { describe, test } from "node:test";
 import { BN } from "@anchor-lang/core";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { PYTH_RECEIVER, SOL_USD_FEED, decodePriceUpdateV2 } from "./defi";
 import { ACC_SCALE, bpsOf, formatToken, parsePublicKey, pendingRent, toRawUnits } from "./program";
-import { PRESET_CATALOG, evaluateProperty, type PropertyInput } from "./scoring";
+import { PRESET_CATALOG, bytesToHex, evaluateProperty, sha256Bytes, type PropertyInput } from "./scoring";
 
 const sampleInput: PropertyInput = PRESET_CATALOG[0].input;
 
@@ -37,6 +38,20 @@ function buildPriceUpdateV2(opts?: {
 }
 
 describe("scoring.ts", () => {
+  test("sha256Bytes matches node:crypto across block boundaries", () => {
+    for (const text of ["", "abc", "a".repeat(55), "a".repeat(56), "a".repeat(64), "Алматы ".repeat(40)]) {
+      assert.equal(bytesToHex(sha256Bytes(text)), createHash("sha256").update(text, "utf8").digest("hex"));
+    }
+  });
+
+  // Эти значения посчитаны Python-движком: расхождение означает, что хеш в UI не совпадёт с эталоном
+  test("produces the same valuation_hash as engine.py for the preset catalog", () => {
+    assert.deepEqual(
+      PRESET_CATALOG.map((item) => evaluateProperty(item.input).valuation_hash_hex.slice(0, 16)),
+      ["65801abf0776d0b4", "5ab5ab049c3c6425", "72cac0027b03ed2a"],
+    );
+  });
+
   test("maintains bear <= base <= bull ordering on normal and extreme inputs", () => {
     const cases: Partial<PropertyInput>[] = [
       {},

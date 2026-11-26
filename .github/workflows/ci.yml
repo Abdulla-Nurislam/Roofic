@@ -152,10 +152,11 @@ jobs:
           npx tsc --noEmit
           npm run build
 
-      - name: Week 14 — Capstone App typecheck + build
+      - name: Week 14 — Capstone App unit tests + typecheck + build
         working-directory: capstone/app
         run: |
           npm ci
+          npm test
           npm run typecheck
           npm run build
 
