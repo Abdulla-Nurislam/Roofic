@@ -827,6 +827,19 @@ fn updated_sale_fee_applies_to_the_next_purchase() {
     assert_eq!(w.token_balance(&w.treasury), fee);
 }
 
+#[test]
+fn listing_rejects_a_name_longer_than_48_bytes() {
+    let mut w = world(legacy_token());
+    let owner = w.owner.insecure_clone();
+
+    let err = try_create_property(&mut w, &owner, 5, &"A".repeat(49), TOTAL_SHARES, PRICE).expect_err("49 bytes");
+    assert!(err.contains(&custom(RooficError::InvalidName)), "got {err}");
+
+    try_create_property(&mut w, &owner, 6, &"B".repeat(48), TOTAL_SHARES, PRICE).expect("48 bytes is the maximum");
+    let created = pda(&[b"property", owner.pubkey().as_ref(), &6u64.to_le_bytes()]);
+    assert!(w.svm.get_account(&created).is_some(), "a 48-byte name is stored");
+}
+
 // ---------------------------------------------------------------------------
 // Money conservation, both payment programs
 // ---------------------------------------------------------------------------
