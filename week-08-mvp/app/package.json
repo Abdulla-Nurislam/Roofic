@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "sync-idl": "mkdir -p src/idl && cp ../target/idl/roofic_mvp.json src/idl/ && cp ../target/types/roofic_mvp.ts src/idl/",
+    "sync-idl": "node scripts/sync-idl.mjs",
     "dev": "next dev -p 3008",
     "build": "next build",
     "start": "next start -p 3008",
