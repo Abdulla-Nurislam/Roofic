@@ -7,11 +7,21 @@ import { evaluateProperty, type PropertyInput } from "@/lib/scoring";
 const execFileAsync = promisify(execFile);
 
 async function runPythonScore(pyScript: string, payloadJson: string): Promise<{ raw: string; bin: string }> {
-  const candidates = process.platform === "win32" ? ["python", "python3"] : ["python3", "python"];
+  const candidates =
+    process.platform === "win32"
+      ? [
+          { bin: "python", prefix: [] as string[] },
+          { bin: "py", prefix: ["-3"] },
+          { bin: "python3", prefix: [] as string[] },
+        ]
+      : [
+          { bin: "python3", prefix: [] as string[] },
+          { bin: "python", prefix: [] as string[] },
+        ];
   let lastError: unknown;
-  for (const bin of candidates) {
+  for (const { bin, prefix } of candidates) {
     try {
-      const { stdout } = await execFileAsync(bin, ["-c", pyScript, payloadJson], { timeout: 4000 });
+      const { stdout } = await execFileAsync(bin, [...prefix, "-c", pyScript, payloadJson], { timeout: 4000 });
       return { raw: stdout.trim(), bin };
     } catch (e: unknown) {
       lastError = e;
