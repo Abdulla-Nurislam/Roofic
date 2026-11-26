@@ -19,9 +19,11 @@ const PROGRAM_ID = new PublicKey(idl.address);
 
 /** Hard ceiling per faucet request to prevent unlimited minting */
 const MAX_FAUCET_USDC = 5_000;
-/** Sliding-window rate limit (requests per 60 seconds per wallet / IP) */
+/** Sliding-window rate limit (requests per 60 seconds, counted separately per wallet and per IP) */
 const RATE_LIMIT_WINDOW_MS = 60_000;
-const MAX_REQUESTS_PER_WINDOW = 4;
+const MAX_REQUESTS_PER_WALLET = 4;
+const MAX_REQUESTS_PER_IP = 20;
+const MAX_TRACKED_KEYS = 1_000;
 const requestLog = new Map<string, number[]>();
 
 const configPda = (): PublicKey =>
@@ -36,10 +38,16 @@ function isSandboxCluster(url: string): boolean {
   return lower.includes("devnet") || lower.includes("127.0.0.1") || lower.includes("localhost");
 }
 
-function checkRateLimit(key: string): boolean {
+function checkRateLimit(key: string, maxRequests: number): boolean {
   const now = Date.now();
+  // Drop expired keys so that arbitrary wallets cannot grow the map without bound
+  if (requestLog.size >= MAX_TRACKED_KEYS) {
+    for (const [k, stamps] of requestLog) {
+      if (stamps.every((ts) => now - ts >= RATE_LIMIT_WINDOW_MS)) requestLog.delete(k);
+    }
+  }
   const prev = (requestLog.get(key) ?? []).filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
-  if (prev.length >= MAX_REQUESTS_PER_WINDOW) {
+  if (prev.length >= maxRequests) {
     requestLog.set(key, prev);
     return false;
   }
@@ -75,16 +83,30 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = (await req.json()) as {
+    const body = (await req.json().catch(() => null)) as {
       action: "mint_usdc" | "kyc_approve";
       wallet: string;
       amount?: number;
-    };
-    const targetWallet = new PublicKey(body.wallet);
-    const clientIp = req.headers.get("x-forwarded-for") ?? "local";
-    if (!checkRateLimit(`${clientIp}:${targetWallet.toBase58()}:${body.action}`)) {
+    } | null;
+    if (!body || (body.action !== "mint_usdc" && body.action !== "kyc_approve")) {
+      return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+    }
+    let targetWallet: PublicKey;
+    try {
+      if (typeof body.wallet !== "string") throw new Error("wallet must be a string");
+      targetWallet = new PublicKey(body.wallet);
+    } catch {
+      return NextResponse.json({ error: "Invalid wallet address" }, { status: 400 });
+    }
+    // The wallet limit cannot be bypassed by spoofing `x-forwarded-for`; the IP limit
+    // slows down wallet rotation. Without the header there is no per-client IP to count.
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+    if (
+      (clientIp && !checkRateLimit(`ip:${clientIp}`, MAX_REQUESTS_PER_IP)) ||
+      !checkRateLimit(`wallet:${targetWallet.toBase58()}:${body.action}`, MAX_REQUESTS_PER_WALLET)
+    ) {
       return NextResponse.json(
-        { error: "Rate limit exceeded (max 4 requests per minute). Please wait before retrying." },
+        { error: "Rate limit exceeded. Please wait a minute before retrying." },
         { status: 429 },
       );
     }
@@ -115,7 +137,7 @@ export async function POST(req: Request) {
 
     if (body.action === "mint_usdc") {
       const humanAmount = body.amount ?? 1_000;
-      if (!Number.isFinite(humanAmount) || humanAmount <= 0 || humanAmount > MAX_FAUCET_USDC) {
+      if (!Number.isFinite(humanAmount) || humanAmount < 1 ||humanAmount > MAX_FAUCET_USDC) {
         return NextResponse.json(
           { error: `Invalid faucet amount: must be between 1 and ${MAX_FAUCET_USDC} USDC` },
           { status: 400 },
