@@ -723,6 +723,67 @@ fn pause_blocks_create_property() {
     assert_eq!(w.property_state().id, 1, "the listing created before the pause stays");
 }
 
+fn try_create_property(
+    w: &mut World,
+    owner: &Keypair,
+    id: u64,
+    name: &str,
+    total_shares: u64,
+    price_per_share: u64,
+) -> Result<(), String> {
+    let prop = pda(&[b"property", owner.pubkey().as_ref(), &id.to_le_bytes()]);
+    let share_mint = pda(&[b"share_mint", prop.as_ref()]);
+    let vault = pda(&[b"vault", prop.as_ref()]);
+    let ix = w.ix(
+        accounts::CreateProperty {
+            config: w.config,
+            owner_kyc: pda(&[b"investor", owner.pubkey().as_ref()]),
+            property: prop,
+            share_mint,
+            vault,
+            payment_mint: w.payment_mint,
+            owner: owner.pubkey(),
+            share_token_program: token_2022(),
+            payment_token_program: w.payment_program,
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        instruction::CreateProperty {
+            id,
+            name: name.into(),
+            total_shares,
+            price_per_share,
+            manager: w.manager.pubkey(),
+            valuation_hash: [3u8; 32],
+        }
+        .data(),
+    );
+    let result = w.send(ix, &[owner]);
+    if result.is_err() {
+        assert!(w.svm.get_account(&prop).is_none(), "rejected listing {id} must not be stored");
+        assert!(w.svm.get_account(&share_mint).is_none(), "rejected share mint {id} must not be stored");
+        assert!(w.svm.get_account(&vault).is_none(), "rejected vault {id} must not be stored");
+    }
+    result
+}
+
+#[test]
+fn listing_rejects_empty_name_and_zero_shares_or_price() {
+    let mut w = world(legacy_token());
+    let owner = w.owner.insecure_clone();
+
+    let err = try_create_property(&mut w, &owner, 2, "", TOTAL_SHARES, PRICE).expect_err("empty name");
+    assert!(err.contains(&custom(RooficError::InvalidName)), "got {err}");
+
+    let err = try_create_property(&mut w, &owner, 3, "Zero Shares", 0, PRICE).expect_err("zero shares");
+    assert!(err.contains(&custom(RooficError::InvalidShares)), "got {err}");
+
+    let err = try_create_property(&mut w, &owner, 4, "Zero Price", TOTAL_SHARES, 0).expect_err("zero price");
+    assert!(err.contains(&custom(RooficError::InvalidPrice)), "got {err}");
+
+    assert_eq!(w.property_state().id, 1, "the valid listing stays");
+}
+
 // ---------------------------------------------------------------------------
 // Money conservation, both payment programs
 // ---------------------------------------------------------------------------
