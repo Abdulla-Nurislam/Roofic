@@ -1050,6 +1050,28 @@ table.data-table tr:hover tbody th {
   padding: 10px 12px;
 }
 
+.filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-block-end: 16px;
+}
+
+.filter-search {
+  max-inline-size: 320px;
+  min-inline-size: 220px;
+}
+
+.hash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-block-end: 4px;
+}
+
 .toast.error {
   border-color: var(--danger);
 }

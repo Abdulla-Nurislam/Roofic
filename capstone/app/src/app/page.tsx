@@ -85,7 +85,11 @@ export default function CapstonePage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast>(null);
   const [activeSection, setActiveSection] = useState<string>("overview");
+  const [propFilter, setPropFilter] = useState<"all" | "available" | "mine" | "managed">("all");
+  const [propQuery, setPropQuery] = useState<string>("");
+  const [copiedHash, setCopiedHash] = useState<boolean>(false);
   const refreshSeqRef = useRef(0);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Scoring Engine & Create Property shared state
   const [scoreInput, setScoreInput] = useState<PropertyInput>(PRESET_CATALOG[0].input);
@@ -265,6 +269,43 @@ export default function CapstonePage() {
     const t = setTimeout(() => setToast(null), 7500);
     return () => clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
+  const filteredProperties = useMemo(() => {
+    const q = propQuery.trim().toLowerCase();
+    return properties.filter((p) => {
+      const key = p.publicKey.toBase58();
+      if (propFilter === "available" && !p.account.sharesSold.lt(p.account.totalShares)) return false;
+      if (propFilter === "mine" && !positions[key]) return false;
+      if (propFilter === "managed" && !(publicKey && p.account.manager.equals(publicKey))) return false;
+      if (!q) return true;
+      const hashHex = bytesToHex(p.account.valuationHash);
+      const matched = KNOWN_REPORTS_BY_HASH[hashHex] ?? customReports[hashHex];
+      const city = matched?.input.city ?? "";
+      return (
+        p.account.name.toLowerCase().includes(q) ||
+        city.toLowerCase().includes(q) ||
+        key.toLowerCase().includes(q) ||
+        p.account.shareMint.toBase58().toLowerCase().includes(q)
+      );
+    });
+  }, [properties, propFilter, propQuery, positions, publicKey, customReports]);
+
+  const copyValuationHash = async (hex: string) => {
+    try {
+      await navigator.clipboard?.writeText(`0x${hex}`);
+      setCopiedHash(true);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopiedHash(false), 2000);
+    } catch {
+      setToast({ kind: "error", text: "Не удалось скопировать хеш в буфер обмена" });
+    }
+  };
 
   const effectiveScoreInput = useMemo<PropertyInput>(
     () => ({
@@ -854,13 +895,48 @@ export default function CapstonePage() {
           <div className="section-header">
             <div className="section-header-left">
               <span className="section-index">РЕЕСТР ОБЪЕКТОВ RWA</span>
-              <h2 id="sec-03-title">Токенизированные объекты недвижимости ({properties.length})</h2>
+              <h2 id="sec-03-title">
+                Токенизированные объекты недвижимости ({filteredProperties.length}
+                {filteredProperties.length !== properties.length ? ` из ${properties.length}` : ""})
+              </h2>
               <p className="section-desc">
                 Каждый объект изолирован в собственном PDA с отдельным хранилищем <code>vault</code> и минтом долей{" "}
                 <code>Token-2022 NonTransferable</code>.
               </p>
             </div>
           </div>
+
+          {!rpcError && !loading && properties.length > 0 && (
+            <div className="filter-bar">
+              <div className="segmented" role="group" aria-label="Фильтр объектов">
+                {(
+                  [
+                    { id: "all", label: "Все" },
+                    { id: "available", label: "Доступные" },
+                    { id: "mine", label: "Мои позиции" },
+                    { id: "managed", label: "Под моим управлением" },
+                  ] as const
+                ).map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`seg-btn ${propFilter === tab.id ? "active" : ""}`}
+                    onClick={() => setPropFilter(tab.id)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="search"
+                className="input filter-search"
+                placeholder="Поиск по названию, городу или адресу…"
+                aria-label="Поиск объектов недвижимости"
+                value={propQuery}
+                onChange={(e) => setPropQuery(e.target.value)}
+              />
+            </div>
+          )}
 
           {rpcError ? (
             <div className="alert-error">
@@ -875,9 +951,24 @@ export default function CapstonePage() {
             <div className="empty">
               В реестре нет объектов. Выполните <code>npm run seed</code> или создайте объект в секции эмиссии.
             </div>
+          ) : filteredProperties.length === 0 ? (
+            <div className="empty">
+              По выбранным фильтрам объекты не найдены.{" "}
+              <button
+                type="button"
+                className="btn ghost sm"
+                style={{ marginInlineStart: 8 }}
+                onClick={() => {
+                  setPropFilter("all");
+                  setPropQuery("");
+                }}
+              >
+                Сбросить фильтры
+              </button>
+            </div>
           ) : (
             <div className="bento-grid">
-              {properties.map((p, idx) => {
+              {filteredProperties.map((p, idx) => {
                 const hashHex = bytesToHex(p.account.valuationHash);
                 const matched = KNOWN_REPORTS_BY_HASH[hashHex] ?? customReports[hashHex];
                 // Asymmetric Bento layout: first item spans 12 cols (horizontal split), next items alternate 7 and 5 cols
@@ -885,7 +976,7 @@ export default function CapstonePage() {
                   idx === 0
                     ? "span-12"
                     : idx % 2 === 1
-                      ? properties.length === idx + 1
+                      ? filteredProperties.length === idx + 1
                         ? "span-12"
                         : "span-7"
                       : "span-5";
@@ -1327,9 +1418,18 @@ export default function CapstonePage() {
                   )}
 
                   <div>
-                    <span className="tech-item-label">
-                      SHA-256 valuation_hash ([u8; 32], канонический JSON)
-                    </span>
+                    <div className="hash-header">
+                      <span className="tech-item-label" style={{ marginBlockEnd: 0 }}>
+                        SHA-256 valuation_hash ([u8; 32], канонический JSON)
+                      </span>
+                      <button
+                        type="button"
+                        className="btn ghost sm"
+                        onClick={() => copyValuationHash(liveReport.valuation_hash_hex)}
+                      >
+                        {copiedHash ? "✓ Скопировано" : "Копировать"}
+                      </button>
+                    </div>
                     <div className="hash-box">0x{liveReport.valuation_hash_hex}</div>
                   </div>
                 </>
