@@ -81,6 +81,8 @@ export default function CapstonePage() {
     Record<string, { input: PropertyInput; report: ScoreReport }>
   >({});
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [rpcError, setRpcError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast>(null);
@@ -171,6 +173,7 @@ export default function CapstonePage() {
 
   const refresh = useCallback(async () => {
     const seq = ++refreshSeqRef.current;
+    setRefreshing(true);
     try {
       setRpcError(null);
       let cfg: PlatformConfig | null = null;
@@ -243,6 +246,9 @@ export default function CapstonePage() {
         setPositions({});
         setUsdcBalance(BigInt(0));
       }
+      if (seq === refreshSeqRef.current) {
+        setLastSyncedAt(new Date());
+      }
     } catch (e) {
       if (seq !== refreshSeqRef.current) return;
       console.error(e);
@@ -250,6 +256,7 @@ export default function CapstonePage() {
     } finally {
       if (seq === refreshSeqRef.current) {
         setLoading(false);
+        setRefreshing(false);
       }
     }
   }, [reader, connection, publicKey]);
@@ -523,9 +530,16 @@ export default function CapstonePage() {
                 Агрегированные показатели пулов ликвидности и адреса конфигурации контракта в сети Solana Devnet.
               </p>
             </div>
-            <button type="button" className="btn ghost sm" onClick={refresh}>
-              Синхронизировать с RPC
-            </button>
+            <div className="sync-group">
+              {lastSyncedAt && (
+                <span className="sync-meta">
+                  Обновлено {lastSyncedAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                </span>
+              )}
+              <button type="button" className="btn ghost sm" disabled={refreshing} onClick={refresh}>
+                {refreshing ? "Синхронизация…" : "Синхронизировать с RPC"}
+              </button>
+            </div>
           </div>
 
           <div className="bento-grid">
@@ -997,6 +1011,7 @@ export default function CapstonePage() {
                     position={positions[p.publicKey.toBase58()]}
                     me={publicKey}
                     myKyc={Boolean(myKyc)}
+                    usdcBalance={usdcBalance}
                     matchedReport={matched?.report}
                     matchedCity={matched?.input.city}
                     solUsd={defi.solUsd?.healthy ? defi.solUsd.conservativePrice : null}
@@ -1957,6 +1972,7 @@ function PropertyCard({
   position,
   me,
   myKyc,
+  usdcBalance,
   matchedReport,
   matchedCity,
   solUsd,
@@ -1973,6 +1989,7 @@ function PropertyCard({
   position?: Position;
   me: PublicKey | null;
   myKyc: boolean;
+  usdcBalance: bigint;
   matchedReport?: ScoreReport;
   matchedCity?: string;
   solUsd: number | null;
@@ -2001,6 +2018,12 @@ function PropertyCard({
     }
   }, [remaining, shares]);
 
+  useEffect(() => {
+    if (activeTab === "manage" && !isManager) {
+      setActiveTab("buy");
+    }
+  }, [activeTab, isManager]);
+
   const claimable = position
     ? pendingRent(position.shares, a.accRentPerShare, position.rewardDebt, position.unclaimed)
     : null;
@@ -2009,6 +2032,7 @@ function PropertyCard({
   const grossBuyCost = a.pricePerShare.mul(new BN(safeShares));
   const saleFee = config ? bpsOf(grossBuyCost, config.saleFeeBps) : new BN(0);
   const ownerProceeds = grossBuyCost.sub(saleFee);
+  const insufficientUsdc = Boolean(me && config && safeShares > 0 && grossBuyCost.gt(new BN(usdcBalance.toString())));
 
   const telemetryBlock = (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -2182,7 +2206,8 @@ function PropertyCard({
                   Boolean(config?.paused) ||
                   !Number.isInteger(shares) ||
                   shares < 1 ||
-                  shares > remaining
+                  shares > remaining ||
+                  insufficientUsdc
                 }
               >
                 {!me
@@ -2195,11 +2220,40 @@ function PropertyCard({
                         ? "Все доли проданы"
                         : !myKyc
                           ? "Требуется KYC"
-                          : busy === `buy-${key}`
-                            ? "Покупка…"
-                            : `Купить за $${formatToken(grossBuyCost, paymentDecimals)}`}
+                          : insufficientUsdc
+                            ? "Недостаточно USDC"
+                            : busy === `buy-${key}`
+                              ? "Покупка…"
+                              : `Купить за $${formatToken(grossBuyCost, paymentDecimals)}`}
               </button>
             </div>
+            {remaining > 0 && (
+              <div className="quick-picks" role="group" aria-label="Быстрый выбор количества долей">
+                {[1, 5, 10].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    className={`seg-btn ${shares === preset ? "active" : ""}`}
+                    disabled={preset > remaining}
+                    onClick={() => setShares(preset)}
+                  >
+                    {preset}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className={`seg-btn ${shares === remaining ? "active" : ""}`}
+                  onClick={() => setShares(remaining)}
+                >
+                  Макс ({remaining})
+                </button>
+              </div>
+            )}
+            {insufficientUsdc && (
+              <span className="warn-inline">
+                Недостаточно USDC на балансе (доступно: ${formatToken(usdcBalance, paymentDecimals)})
+              </span>
+            )}
             <span className="rules-list mono">
               Владельцу: ${formatToken(ownerProceeds, paymentDecimals)} USDC · Комиссия протокола: $
               {formatToken(saleFee, paymentDecimals)} USDC

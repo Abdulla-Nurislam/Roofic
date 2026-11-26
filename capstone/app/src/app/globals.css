@@ -1072,6 +1072,31 @@ table.data-table tr:hover tbody th {
   margin-block-end: 4px;
 }
 
+.sync-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sync-meta {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.quick-picks {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.warn-inline {
+  font-size: 0.75rem;
+  color: var(--amber);
+}
+
 .toast.error {
   border-color: var(--danger);
 }
