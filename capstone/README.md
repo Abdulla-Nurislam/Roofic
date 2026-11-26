@@ -86,7 +86,7 @@ npm run dev           # http://localhost:3014
 
 ## Тесты смарт-контракта (LiteSVM)
 
-В [`programs/roofic/tests/roofic_test.rs`](programs/roofic/tests/roofic_test.rs) — **31 интеграционный тест** LiteSVM, проверяющих все инварианты, роли, коды ошибок, защиту от эксплойтов и закон сохранения денег как для классического **SPL Token (USDC)**, так и для **Token-2022 (PYUSD)**. Отдельно в том же файле лежит `devnet_smoke_checks_deployed_platform_and_properties`: без `ROOFIC_DEVNET=1` он сразу завершается, в CI не запускается и в таблицу ниже не входит.
+В [`programs/roofic/tests/roofic_test.rs`](programs/roofic/tests/roofic_test.rs) — **33 интеграционных теста** LiteSVM, проверяющих все инварианты, роли, коды ошибок, защиту от эксплойтов и закон сохранения денег как для классического **SPL Token (USDC)**, так и для **Token-2022 (PYUSD)**. Отдельно в том же файле лежит `devnet_smoke_checks_deployed_platform_and_properties`: без `ROOFIC_DEVNET=1` он сразу завершается, в CI не запускается и в таблицу ниже не входит.
 
 ```bash
 anchor build
@@ -127,3 +127,5 @@ cargo clippy --all-targets -- -D warnings
 | 29 | `deposit_rejects_vault_that_does_not_belong_to_the_property` | Чужой vault даёт `WrongVault`, баланс manager и настоящий сейф не меняются |
 | 30 | `buy_rejects_zero_shares` | `buy_shares(0)` даёт `InvalidShares`, позиция и оплата не появляются |
 | 31 | `updated_rent_fee_applies_to_the_next_deposit` | Новая `rent_fee_bps` делит следующий депозит аренды |
+| 32 | `initialize_platform_rejects_transfer_hook_and_permanent_delegate` | Минт с `TransferHook` или `PermanentDelegate` отвергается при инициализации |
+| 33 | `claim_rejects_vault_that_does_not_belong_to_the_property` | Чужой vault в `claim_rent` даёт `WrongVault`, выплата не списывается |
