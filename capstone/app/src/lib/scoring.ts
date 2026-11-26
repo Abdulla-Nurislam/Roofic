@@ -193,17 +193,19 @@ export function evaluateProperty(inp: PropertyInput): ScoreReport {
     inp.manager_fee_ratio,
     inp.platform_rent_fee_bps,
   );
+  // The caps/floors below must never make a stress case better than base
+  // (or an upside case worse than base) for extreme inputs.
   const bear = netYield(
     inp.gross_yield * 0.85,
-    Math.min(0.95, inp.vacancy_rate + 0.07),
-    Math.min(0.90 - inp.manager_fee_ratio, inp.opex_ratio + 0.05),
+    Math.max(inp.vacancy_rate, Math.min(0.95, inp.vacancy_rate + 0.07)),
+    Math.max(inp.opex_ratio, Math.min(0.90 - inp.manager_fee_ratio, inp.opex_ratio + 0.05)),
     inp.manager_fee_ratio,
     inp.platform_rent_fee_bps,
   );
   const bull = netYield(
     inp.gross_yield * 1.12,
     Math.max(0.0, inp.vacancy_rate - 0.03),
-    Math.max(0.05, inp.opex_ratio - 0.03),
+    Math.min(inp.opex_ratio, Math.max(0.05, inp.opex_ratio - 0.03)),
     inp.manager_fee_ratio,
     inp.platform_rent_fee_bps,
   );

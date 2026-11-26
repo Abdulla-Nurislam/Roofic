@@ -42,6 +42,17 @@ class ScoringEngineTests(unittest.TestCase):
         self.assertEqual(len(good.warnings), 0)
         self.assertGreaterEqual(len(risky.warnings), 2)
 
+    def test_scenario_ordering_holds_at_extreme_inputs(self) -> None:
+        for override in (
+            {"opex_ratio": 0.93, "manager_fee_ratio": 0.02},  # above the bear opex cap
+            {"opex_ratio": 0.01},                             # below the bull opex floor
+            {"vacancy_rate": 0.97},                           # above the bear vacancy cap
+        ):
+            with self.subTest(**override):
+                rep = evaluate_property(replace(self.sample, **override))
+                self.assertLessEqual(rep.net_yield_bear, rep.net_yield_base)
+                self.assertLessEqual(rep.net_yield_base, rep.net_yield_bull)
+
     def test_invalid_inputs_rejected(self) -> None:
         with self.assertRaises(ValueError):
             evaluate_property(replace(self.sample, price_usd=0))
