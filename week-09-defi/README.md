@@ -14,7 +14,7 @@
 
 | Скрипт | Что делает |
 |--------|-----------|
-| `npm test` | 5 модульных тестов (`src/pyth.test.ts`): разбор `PriceUpdateV2`, отказ при подмене `owner`, `Partial`-верификации, устаревшей цене и широком `conf/price` |
+| `npm test` | 6 модульных тестов (`src/pyth.test.ts`): разбор `PriceUpdateV2`, отказ при подмене `owner`, `Partial`-верификации, устаревшей, нулевой и отрицательной цене и широком `conf/price` |
 | `npm run pyth` | Читает `PriceUpdateV2` напрямую из аккаунтов devnet, декодирует вручную, проверяет owner / верификацию / свежесть / confidence |
 | `npm run jupiter` | Реальная котировка 1 SOL → USDC, маршрут, сборка swap-транзакции и разбор её инструкций (не отправляется) |
 | `npm run yields` | APY Marinade и Jito, ставки Kamino по стейблкоинам, цены Jupiter |

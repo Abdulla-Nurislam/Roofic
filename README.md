@@ -100,7 +100,7 @@ flowchart LR
 | 6 | Accounts, PDAs: on-chain профиль | РО2 | [week-06-pda-profile](week-06-pda-profile/) | ✅ (7 тестов, Devnet) |
 | 7 | SPL Tokens & Token Extensions | РО2 | [week-07-spl-token](week-07-spl-token/) | ✅ (Token-2022, Devnet) |
 | 8 | РК1 · Build Sprint: первый Web3 MVP | РО3 | [week-08-mvp](week-08-mvp/) | ✅ (9 тестов, Next.js, Devnet) |
-| 9 | DeFi на Solana (Pyth, Jupiter, Kamino) | РО3 | [week-09-defi](week-09-defi/) | ✅ (5 тестов + интеграция) |
+| 9 | DeFi на Solana (Pyth, Jupiter, Kamino) | РО3 | [week-09-defi](week-09-defi/) | ✅ (6 тестов + интеграция) |
 | 10 | RPC, API и blockchain data | РО3 | [week-10-dashboard](week-10-dashboard/) | ✅ (7 тестов, Next.js) |
 | 11 | CPI и composable applications | РО3 | [week-11-cpi](week-11-cpi/) | ✅ (11 тестов, 2 программы) |
 | 12 | Security & Exploit Lab | РО4 | [week-12-security-lab](week-12-security-lab/) | ✅ (11 эксплойт/фикс-тестов) |
