@@ -840,6 +840,42 @@ fn listing_rejects_a_name_longer_than_48_bytes() {
     assert!(w.svm.get_account(&created).is_some(), "a 48-byte name is stored");
 }
 
+#[test]
+fn buy_rejects_share_mint_that_does_not_belong_to_the_property() {
+    let mut w = world(legacy_token());
+    let alice = alice(&w);
+    let decoy = Pubkey::new_unique();
+    w.svm
+        .set_account(
+            decoy,
+            Account {
+                lamports: 10_000_000,
+                data: mint_bytes(0),
+                owner: token_2022(),
+                executable: false,
+                rent_epoch: 0,
+            },
+        )
+        .unwrap();
+
+    let real_ata = share_ata(&alice.pubkey(), &w.share_mint);
+    let mut metas = w.buy_metas(&alice.pubkey());
+    for meta in &mut metas {
+        if meta.pubkey == w.share_mint {
+            meta.pubkey = decoy;
+        } else if meta.pubkey == real_ata {
+            meta.pubkey = share_ata(&alice.pubkey(), &decoy);
+        }
+    }
+    let before = w.token_balance(&w.pay_account(&alice.pubkey()));
+    let ix = w.ix(metas, instruction::BuyShares { shares: 1 }.data());
+    let err = w.send(ix, &[&alice]).expect_err("foreign share mint");
+    assert!(err.contains(&custom(RooficError::WrongShareMint)), "got {err}");
+    assert_eq!(w.token_balance(&w.pay_account(&alice.pubkey())), before);
+    assert_eq!(w.property_state().shares_sold, 0);
+    assert_eq!(w.supply(), 0);
+}
+
 // ---------------------------------------------------------------------------
 // Money conservation, both payment programs
 // ---------------------------------------------------------------------------
