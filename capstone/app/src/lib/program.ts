@@ -7,6 +7,7 @@ import { PublicKey } from "@solana/web3.js";
 import { useMemo } from "react";
 import idl from "@/idl/roofic.json";
 import type { Roofic } from "@/idl/roofic";
+import { explorerClusterQuery } from "./explorer";
 
 export const PROGRAM_ID = new PublicKey(idl.address);
 export const SHARE_TOKEN_PROGRAM_ID = TOKEN_2022_PROGRAM_ID;
@@ -106,9 +107,11 @@ export function shortKey(pk: PublicKey | string): string {
   return `${s.slice(0, 4)}…${s.slice(-4)}`;
 }
 
+const CLUSTER_QUERY = explorerClusterQuery(process.env.NEXT_PUBLIC_RPC_URL);
+
 export const explorerTx = (sig: string): string =>
-  `https://explorer.solana.com/tx/${sig}?cluster=devnet`;
+  `https://explorer.solana.com/tx/${sig}${CLUSTER_QUERY}`;
 
 export const explorerAddress = (addr: PublicKey | string): string =>
-  `https://explorer.solana.com/address/${typeof addr === "string" ? addr : addr.toBase58()}?cluster=devnet`;
+  `https://explorer.solana.com/address/${typeof addr === "string" ? addr : addr.toBase58()}${CLUSTER_QUERY}`;
 

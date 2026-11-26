@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start -p 3014",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/lib/scoring.test.ts",
+    "test": "node --import tsx --test src/lib/scoring.test.ts src/lib/explorer.test.ts",
     "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
