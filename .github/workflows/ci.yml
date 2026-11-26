@@ -151,6 +151,12 @@ jobs:
           npm ci
           npm run typecheck
 
+      - name: Week 11 — CPI client typecheck
+        working-directory: week-11-cpi/client
+        run: |
+          npm ci
+          npm run typecheck
+
       - name: Week 8 — MVP App typecheck + build
         working-directory: week-08-mvp/app
         run: |
