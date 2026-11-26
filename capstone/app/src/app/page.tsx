@@ -12,7 +12,7 @@ import {
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { PublicKey, SystemProgram, type TransactionInstruction } from "@solana/web3.js";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Roofic } from "@/idl/roofic";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -26,6 +26,7 @@ import {
   explorerTx,
   formatToken,
   investorPda,
+  parsePublicKey,
   pendingRent,
   positionPda,
   propertyPda,
@@ -52,14 +53,15 @@ type Position = IdlAccounts<Roofic>["position"];
 type InvestorRecord = IdlAccounts<Roofic>["investor"];
 type Toast = { kind: "ok" | "error"; text: string; sig?: string } | null;
 
-/** `new PublicKey` throws on anything that is not 32 bytes of Base58 */
-const parsePubkey = (value: string): PublicKey | null => {
-  try {
-    return new PublicKey(value.trim());
-  } catch {
-    return null;
-  }
-};
+const CUSTOM_REPORTS_KEY = "roofic-capstone:custom-reports";
+const NAV_SECTIONS = [
+  { id: "overview", label: "Обзор" },
+  { id: "investor", label: "Кошелёк и KYC" },
+  { id: "properties", label: "Объекты" },
+  { id: "scoring", label: "Скоринг SHA-256" },
+  { id: "create", label: "Эмиссия" },
+  { id: "admin", label: "Протокол" },
+] as const;
 
 export default function CapstonePage() {
   const { connection } = useConnection();
@@ -79,8 +81,11 @@ export default function CapstonePage() {
     Record<string, { input: PropertyInput; report: ScoreReport }>
   >({});
   const [loading, setLoading] = useState(true);
+  const [rpcError, setRpcError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast>(null);
+  const [activeSection, setActiveSection] = useState<string>("overview");
+  const refreshSeqRef = useRef(0);
 
   // Scoring Engine & Create Property shared state
   const [scoreInput, setScoreInput] = useState<PropertyInput>(PRESET_CATALOG[0].input);
@@ -88,6 +93,50 @@ export default function CapstonePage() {
   const [priceUsdc, setPriceUsdc] = useState<number>(PRESET_CATALOG[0].pricePerShareUsdc);
   const [managerStr, setManagerStr] = useState<string>("");
   const [pyVerifiedHash, setPyVerifiedHash] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(CUSTOM_REPORTS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Record<string, { input: PropertyInput; report: ScoreReport }>;
+        if (parsed && typeof parsed === "object") {
+          setCustomReports(parsed);
+        }
+      }
+    } catch {
+      // Ignore malformed storage entries
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (Object.keys(customReports).length > 0) {
+        localStorage.setItem(CUSTOM_REPORTS_KEY, JSON.stringify(customReports));
+      }
+    } catch {
+      // Ignore storage quota errors
+    }
+  }, [customReports]);
+
+  useEffect(() => {
+    const sections = NAV_SECTIONS.map((s) => document.getElementById(s.id)).filter(
+      (el): el is HTMLElement => el !== null,
+    );
+    if (sections.length === 0 || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible?.target.id) {
+          setActiveSection(visible.target.id);
+        }
+      },
+      { rootMargin: "-20% 0px -55% 0px", threshold: [0.1, 0.3, 0.6] },
+    );
+    for (const el of sections) observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Sync aria-invalid with CSS :user-invalid state
   useEffect(() => {
@@ -117,12 +166,16 @@ export default function CapstonePage() {
   }, []);
 
   const refresh = useCallback(async () => {
+    const seq = ++refreshSeqRef.current;
     try {
+      setRpcError(null);
       let cfg: PlatformConfig | null = null;
       try {
         cfg = await reader.account.platformConfig.fetch(configPda());
+        if (seq !== refreshSeqRef.current) return;
         setConfig(cfg);
       } catch {
+        if (seq !== refreshSeqRef.current) return;
         setConfig(null);
       }
 
@@ -130,6 +183,7 @@ export default function CapstonePage() {
       let decimals = 6;
       if (cfg) {
         const mintInfoAcct = await connection.getAccountInfo(cfg.paymentMint);
+        if (seq !== refreshSeqRef.current) return;
         if (mintInfoAcct) {
           tokenProg = mintInfoAcct.owner.equals(TOKEN_2022_PROGRAM_ID)
             ? TOKEN_2022_PROGRAM_ID
@@ -137,6 +191,7 @@ export default function CapstonePage() {
           setPaymentTokenProgram(tokenProg);
           try {
             const mintData = await getMint(connection, cfg.paymentMint, "confirmed", tokenProg);
+            if (seq !== refreshSeqRef.current) return;
             decimals = mintData.decimals;
             setPaymentDecimals(decimals);
           } catch {
@@ -146,30 +201,38 @@ export default function CapstonePage() {
       }
 
       const allProps = await reader.account.property.all();
+      if (seq !== refreshSeqRef.current) return;
       allProps.sort((a, b) => b.account.id.cmp(a.account.id));
       setProperties(allProps);
 
       if (publicKey) {
         try {
           const rec = await reader.account.investor.fetch(investorPda(publicKey));
+          if (seq !== refreshSeqRef.current) return;
           setMyKyc(rec);
         } catch {
+          if (seq !== refreshSeqRef.current) return;
           setMyKyc(null);
         }
 
         const mine = await reader.account.position.all([
           { memcmp: { offset: 8, bytes: publicKey.toBase58() } },
         ]);
+        if (seq !== refreshSeqRef.current) return;
         setPositions(Object.fromEntries(mine.map((p) => [p.account.property.toBase58(), p.account])));
 
         if (cfg) {
           try {
             const ata = getAssociatedTokenAddressSync(cfg.paymentMint, publicKey, false, tokenProg);
             const tokAcct = await getAccount(connection, ata, "confirmed", tokenProg);
+            if (seq !== refreshSeqRef.current) return;
             setUsdcBalance(tokAcct.amount);
           } catch {
+            if (seq !== refreshSeqRef.current) return;
             setUsdcBalance(BigInt(0));
           }
+        } else {
+          setUsdcBalance(BigInt(0));
         }
       } else {
         setMyKyc(null);
@@ -177,9 +240,13 @@ export default function CapstonePage() {
         setUsdcBalance(BigInt(0));
       }
     } catch (e) {
+      if (seq !== refreshSeqRef.current) return;
       console.error(e);
+      setRpcError(e instanceof Error ? e.message : "Ошибка чтения Solana RPC");
     } finally {
-      setLoading(false);
+      if (seq === refreshSeqRef.current) {
+        setLoading(false);
+      }
     }
   }, [reader, connection, publicKey]);
 
@@ -208,11 +275,17 @@ export default function CapstonePage() {
     [scoreInput, config],
   );
 
-  const liveReport = useMemo<ScoreReport | null>(() => {
+  const { report: liveReport, error: scoreError } = useMemo<{
+    report: ScoreReport | null;
+    error: string | null;
+  }>(() => {
     try {
-      return evaluateProperty(effectiveScoreInput);
-    } catch {
-      return null;
+      return { report: evaluateProperty(effectiveScoreInput), error: null };
+    } catch (e: unknown) {
+      return {
+        report: null,
+        error: e instanceof Error ? e.message : "Некорректные параметры скоринга",
+      };
     }
   }, [effectiveScoreInput]);
 
@@ -242,7 +315,7 @@ export default function CapstonePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Scoring API failed");
       // The API silently falls back to the TypeScript engine: that is not a Python verification
-      if (!String(data.engine_source).startsWith("python3")) {
+      if (!String(data.engine_source).startsWith("python")) {
         throw new Error("Python недоступен на сервере: сверка с engine.py не выполнена");
       }
       if (data.valuation_hash_hex !== liveReport.valuation_hash_hex) {
@@ -360,24 +433,16 @@ export default function CapstonePage() {
           </div>
 
           <nav className="nav-links" aria-label="Секции платформы">
-            <a href="#overview" className="nav-link">
-              Обзор
-            </a>
-            <a href="#investor" className="nav-link">
-              Кошелёк и KYC
-            </a>
-            <a href="#properties" className="nav-link">
-              Объекты ({stats.count})
-            </a>
-            <a href="#scoring" className="nav-link">
-              Скоринг SHA-256
-            </a>
-            <a href="#create" className="nav-link">
-              Эмиссия
-            </a>
-            <a href="#admin" className="nav-link">
-              Протокол
-            </a>
+            {NAV_SECTIONS.map((sec) => (
+              <a
+                key={sec.id}
+                href={`#${sec.id}`}
+                className={`nav-link ${activeSection === sec.id ? "active" : ""}`}
+                onClick={() => setActiveSection(sec.id)}
+              >
+                {sec.id === "properties" ? `${sec.label} (${stats.count})` : sec.label}
+              </a>
+            ))}
           </nav>
 
           <div className="header-actions">
@@ -444,7 +509,7 @@ export default function CapstonePage() {
                   >
                     {shortKey(PROGRAM_ID)} ↗
                   </a>
-                  <span className="tech-item-sub">Anchor v0.31 · Rust</span>
+                  <span className="tech-item-sub">Anchor v1.2 · Rust</span>
                 </div>
 
                 <div className="tech-item">
@@ -461,7 +526,10 @@ export default function CapstonePage() {
                   ) : (
                     <span className="tech-item-value">—</span>
                   )}
-                  <span className="tech-item-sub">{paymentDecimals} decimals · SPL Token</span>
+                  <span className="tech-item-sub">
+                    {paymentDecimals} decimals ·{" "}
+                    {paymentTokenProgram.equals(TOKEN_2022_PROGRAM_ID) ? "Token-2022" : "SPL Token"}
+                  </span>
                 </div>
 
                 <div className="tech-item">
@@ -586,10 +654,12 @@ export default function CapstonePage() {
                 <span className="metric-label">
                   ОНЧЕЙН-ОРАКУЛЫ И МАРШРУТИЗАЦИЯ ЛИКВИДНОСТИ (PYTH PRICEUPDATEV2 · JUPITER V6 · KAMINO)
                 </span>
-                <span className={defi.solUsd?.healthy ? "badge" : "badge neutral"}>
+                <span className={defi.solUsd?.healthy ? "badge" : defi.synced ? "badge warn" : "badge neutral"}>
                   {defi.solUsd
                     ? `PYTH ${defi.solUsd.verifiedFull ? "FULL" : "PARTIAL"} · AGE ${defi.solUsd.ageSec}s`
-                    : "SYNCING ORACLES…"}
+                    : defi.synced
+                      ? "ORACLES UNAVAILABLE"
+                      : "SYNCING ORACLES…"}
                 </span>
               </div>
               <div className="tech-grid" style={{ marginTop: "8px" }}>
@@ -745,7 +815,7 @@ export default function CapstonePage() {
                   type="button"
                   className="btn ghost"
                   style={{ width: "100%" }}
-                  disabled={!publicKey || !config || busy === "faucet-usdc"}
+                  disabled={!publicKey || !config || busy !== null}
                   onClick={requestFaucetUsdc}
                 >
                   {busy === "faucet-usdc" ? "Минт токенов…" : "Получить +1,000 Demo USDC"}
@@ -792,7 +862,14 @@ export default function CapstonePage() {
             </div>
           </div>
 
-          {loading ? (
+          {rpcError ? (
+            <div className="alert-error">
+              Ошибка RPC: {rpcError}{" "}
+              <button type="button" className="btn ghost sm" style={{ marginInlineStart: 8 }} onClick={refresh}>
+                Повторить
+              </button>
+            </div>
+          ) : loading ? (
             <div className="empty">Чтение аккаунтов программы `roofic` из Solana Devnet…</div>
           ) : properties.length === 0 ? (
             <div className="empty">
@@ -831,6 +908,10 @@ export default function CapstonePage() {
                     onBuy={(shares) =>
                       run(`buy-${p.publicKey.toBase58()}`, `Куплено долей: ${shares}`, async () => {
                         if (!program || !publicKey || !config) throw new Error("Подключите кошелёк");
+                        const remaining = Number(p.account.totalShares.sub(p.account.sharesSold).toString());
+                        if (!Number.isInteger(shares) || shares < 1 || shares > remaining) {
+                          throw new Error(`Укажите целое число долей от 1 до ${remaining}`);
+                        }
                         const investorPayment = getAssociatedTokenAddressSync(
                           config.paymentMint,
                           publicKey,
@@ -926,6 +1007,9 @@ export default function CapstonePage() {
                     onDeposit={(usdcAmount) =>
                       run(`dep-${p.publicKey.toBase58()}`, `Внесено аренды: ${usdcAmount} USDC`, async () => {
                         if (!program || !publicKey || !config) throw new Error("Подключите кошелёк");
+                        if (!Number.isFinite(usdcAmount) || usdcAmount <= 0) {
+                          throw new Error("Сумма аренды должна быть больше 0 USDC");
+                        }
                         const managerPayment = getAssociatedTokenAddressSync(
                           config.paymentMint,
                           publicKey,
@@ -1161,7 +1245,7 @@ export default function CapstonePage() {
                     </div>
                   </div>
 
-                  <button type="submit" className="btn ghost" disabled={busy === "py-score"}>
+                  <button type="submit" className="btn ghost" disabled={!liveReport || busy === "py-score"}>
                     {busy === "py-score" ? "Выполнение Python engine.py…" : "Сверить с Python scoring/engine.py"}
                   </button>
                 </fieldset>
@@ -1174,7 +1258,7 @@ export default function CapstonePage() {
                 <span className="metric-label">Чистая доходность (Net Yield)</span>
                 <span className="badge neutral">После OpEx, УК и комиссий</span>
               </div>
-              {liveReport && (
+              {liveReport ? (
                 <div className="scenario-grid">
                   <div className="scenario-box">
                     <div className="scenario-label">Bear (стресс)</div>
@@ -1189,6 +1273,8 @@ export default function CapstonePage() {
                     <div className="scenario-val">{(liveReport.net_yield_bull * 100).toFixed(2)}%</div>
                   </div>
                 </div>
+              ) : (
+                <div className="alert-error">Параметры некорректны: {scoreError}</div>
               )}
             </div>
 
@@ -1202,19 +1288,21 @@ export default function CapstonePage() {
                   </div>
                 )}
               </div>
-              {liveReport && (
+              {liveReport ? (
                 <>
                   <div className="metric-value">{liveReport.risk_score} / 100</div>
                   <div className="metric-sub">
                     <span>0 — мин., 100 — макс.</span>
                   </div>
                 </>
+              ) : (
+                <div className="rules-list">Исправьте входные параметры для расчёта грейда риска.</div>
               )}
             </div>
 
             {/* Bottom-Right Cell (span-7): Factor Breakdown & Cryptographic Hash */}
             <div className="bento-cell span-7">
-              {liveReport && (
+              {liveReport ? (
                 <>
                   <div className="metric-top">
                     <span className="metric-label">Декомпозиция факторов риска (по 25 баллов)</span>
@@ -1245,6 +1333,10 @@ export default function CapstonePage() {
                     <div className="hash-box">0x{liveReport.valuation_hash_hex}</div>
                   </div>
                 </>
+              ) : (
+                <div className="alert-error">
+                  Не удалось построить отчёт скоринга: {scoreError ?? "проверьте корректность полей"}
+                </div>
               )}
             </div>
           </div>
@@ -1269,10 +1361,25 @@ export default function CapstonePage() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  if (!program || !publicKey || !config || !liveReport) return;
+                  if (!program || !publicKey || !config) return;
+                  if (!liveReport) {
+                    setToast({
+                      kind: "error",
+                      text: `Исправьте параметры скоринга: ${scoreError ?? "некорректные данные"}`,
+                    });
+                    return;
+                  }
+                  if (!Number.isInteger(sharesToCreate) || sharesToCreate < 1) {
+                    setToast({ kind: "error", text: "Количество долей должно быть целым числом ≥ 1" });
+                    return;
+                  }
+                  if (!Number.isFinite(priceUsdc) || priceUsdc <= 0) {
+                    setToast({ kind: "error", text: "Цена 1 доли должна быть больше 0 USDC" });
+                    return;
+                  }
                   const id = new BN(Date.now());
                   const propPda = propertyPda(publicKey, id);
-                  const mgrKey = parsePubkey(managerStr.trim() || publicKey.toBase58());
+                  const mgrKey = parsePublicKey(managerStr.trim() || publicKey.toBase58());
                   if (!mgrKey) {
                     setToast({ kind: "error", text: "Некорректный адрес кошелька управляющей компании" });
                     return;
@@ -1390,15 +1497,19 @@ export default function CapstonePage() {
                   <button
                     type="submit"
                     className="btn"
-                    disabled={busy === "create-prop" || !publicKey || !myKyc || !config || config.paused}
+                    disabled={busy !== null || !publicKey || !myKyc || !config || config.paused || !liveReport}
                   >
                     {!publicKey
                       ? "Подключите кошелёк для эмиссии"
                       : !myKyc
                         ? "Требуется KYC/KYB эмитента (активируйте в разделе 02)"
-                        : busy === "create-prop"
-                          ? "Отправка транзакции в Devnet…"
-                          : "Зарегистрировать объект в Solana Devnet"}
+                        : config?.paused
+                          ? "Протокол на паузе"
+                          : !liveReport
+                            ? "Исправьте параметры скоринга"
+                            : busy === "create-prop"
+                              ? "Отправка транзакции в Devnet…"
+                              : "Зарегистрировать объект в Solana Devnet"}
                   </button>
                 </fieldset>
               </form>
@@ -1421,10 +1532,17 @@ export default function CapstonePage() {
                 <div className="tech-item">
                   <span className="tech-item-label">Полная капитализация пула</span>
                   <span className="tech-item-value">
-                    ${(sharesToCreate * priceUsdc).toLocaleString("en-US")} USDC
+                    $
+                    {(
+                      Number.isFinite(sharesToCreate) && Number.isFinite(priceUsdc)
+                        ? Math.max(0, sharesToCreate * priceUsdc)
+                        : 0
+                    ).toLocaleString("en-US")}{" "}
+                    USDC
                   </span>
                   <span className="tech-item-sub">
-                    {sharesToCreate.toLocaleString("en-US")} долей × ${priceUsdc} USDC (0 decimals)
+                    {(Number.isFinite(sharesToCreate) ? Math.max(0, sharesToCreate) : 0).toLocaleString("en-US")} долей × $
+                    {Number.isFinite(priceUsdc) ? priceUsdc : 0} USDC (0 decimals)
                   </span>
                 </div>
 
@@ -1441,7 +1559,7 @@ export default function CapstonePage() {
                     {liveReport ? `${(liveReport.net_yield_base * 100).toFixed(2)}% годовых` : "—"}
                   </span>
                   <span className="tech-item-sub">
-                    SHA-256: 0x{liveReport?.valuation_hash_hex.slice(0, 16)}…
+                    {liveReport ? `SHA-256: 0x${liveReport.valuation_hash_hex.slice(0, 16)}…` : "SHA-256: —"}
                   </span>
                 </div>
               </div>
@@ -1469,7 +1587,7 @@ export default function CapstonePage() {
               isAdmin={isAdmin}
               busy={busy}
               onApprove={(w) => approveWalletKyc(w)}
-              onInvalidWallet={() => setToast({ kind: "error", text: "Некорректный Base58-адрес кошелька" })}
+              onError={(text) => setToast({ kind: "error", text })}
               onRevoke={(w) =>
                 run(`revoke-${w.toBase58()}`, `KYC отозван: ${shortKey(w)}`, async () => {
                   if (!program || !publicKey) throw new Error("Подключите кошелёк администратора");
@@ -1526,6 +1644,14 @@ export default function CapstonePage() {
                 Explorer ↗
               </a>
             )}
+            <button
+              type="button"
+              className="toast-close"
+              onClick={() => setToast(null)}
+              aria-label="Закрыть уведомление"
+            >
+              ×
+            </button>
           </div>
         )}
       </main>
@@ -1554,7 +1680,7 @@ function AdminBento({
   busy,
   onApprove,
   onRevoke,
-  onInvalidWallet,
+  onError,
   onTogglePause,
   onUpdateFees,
 }: {
@@ -1563,7 +1689,7 @@ function AdminBento({
   busy: string | null;
   onApprove: (wallet: PublicKey) => void;
   onRevoke: (wallet: PublicKey) => void;
-  onInvalidWallet: () => void;
+  onError: (msg: string) => void;
   onTogglePause: (paused: boolean) => void;
   onUpdateFees: (rentFeeBps: number, saleFeeBps: number) => void;
 }) {
@@ -1571,10 +1697,15 @@ function AdminBento({
   const [rentFee, setRentFee] = useState(config.rentFeeBps);
   const [saleFee, setSaleFee] = useState(config.saleFeeBps);
 
+  useEffect(() => {
+    setRentFee(config.rentFeeBps);
+    setSaleFee(config.saleFeeBps);
+  }, [config.rentFeeBps, config.saleFeeBps]);
+
   const withWallet = (action: (wallet: PublicKey) => void) => {
-    const wallet = parsePubkey(kycWallet);
+    const wallet = parsePublicKey(kycWallet);
     if (wallet) action(wallet);
-    else onInvalidWallet();
+    else onError("Некорректный Base58-адрес кошелька");
   };
 
   return (
@@ -1631,6 +1762,17 @@ function AdminBento({
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            if (
+              !Number.isInteger(rentFee) ||
+              rentFee < 0 ||
+              rentFee > 2000 ||
+              !Number.isInteger(saleFee) ||
+              saleFee < 0 ||
+              saleFee > 2000
+            ) {
+              onError("Комиссии должны быть целым числом от 0 до 2000 bps");
+              return;
+            }
             onUpdateFees(rentFee, saleFee);
           }}
         >
@@ -1666,7 +1808,7 @@ function AdminBento({
                 />
               </div>
             </div>
-            <button type="submit" className="btn ghost sm" disabled={busy === "fees" || !isAdmin}>
+            <button type="submit" className="btn ghost sm" disabled={busy !== null || !isAdmin}>
               Применить комиссии (set_fees)
             </button>
           </fieldset>
@@ -1691,7 +1833,7 @@ function AdminBento({
           type="button"
           className={`btn sm ${config.paused ? "teal" : "danger"}`}
           style={{ width: "100%" }}
-          disabled={busy === "pause" || !isAdmin}
+          disabled={busy !== null || !isAdmin}
           onClick={() => onTogglePause(!config.paused)}
         >
           {config.paused ? "Снять паузу (set_paused(false))" : "Включить паузу (set_paused(true))"}
@@ -1734,24 +1876,32 @@ function PropertyCard({
   onDeposit: (usdc: number) => void;
   onClaim: () => void;
 }) {
-  const [shares, setShares] = useState(5);
-  const [rentUsdc, setRentUsdc] = useState(50);
-  const [activeTab, setActiveTab] = useState<"buy" | "claim" | "manage">("buy");
-
   const a = p.account;
   const key = p.publicKey.toBase58();
   const isOwner = me?.equals(a.owner) ?? false;
   const isManager = me?.equals(a.manager) ?? false;
   const sold = Number(a.sharesSold.toString());
   const total = Number(a.totalShares.toString());
+  const remaining = Math.max(0, total - sold);
   const pct = total ? (sold / total) * 100 : 0;
   const hashHex = bytesToHex(a.valuationHash);
+
+  const [shares, setShares] = useState(() => Math.min(5, Math.max(1, remaining)));
+  const [rentUsdc, setRentUsdc] = useState(50);
+  const [activeTab, setActiveTab] = useState<"buy" | "claim" | "manage">("buy");
+
+  useEffect(() => {
+    if (remaining > 0 && shares > remaining) {
+      setShares(remaining);
+    }
+  }, [remaining, shares]);
 
   const claimable = position
     ? pendingRent(position.shares, a.accRentPerShare, position.rewardDebt, position.unclaimed)
     : null;
 
-  const grossBuyCost = a.pricePerShare.mul(new BN(Math.max(0, shares)));
+  const safeShares = Number.isFinite(shares) ? Math.max(0, Math.floor(shares)) : 0;
+  const grossBuyCost = a.pricePerShare.mul(new BN(safeShares));
   const saleFee = config ? bpsOf(grossBuyCost, config.saleFeeBps) : new BN(0);
   const ownerProceeds = grossBuyCost.sub(saleFee);
 
@@ -1761,8 +1911,12 @@ function PropertyCard({
         <div>
           <h3 className="prop-title">{a.name}</h3>
           <div className="prop-meta">
-            {matchedCity && <span>{matchedCity}</span>}
-            <span>·</span>
+            {matchedCity && (
+              <>
+                <span>{matchedCity}</span>
+                <span>·</span>
+              </>
+            )}
             <span className="mono">
               Mint:{" "}
               <a href={explorerAddress(a.shareMint)} target="_blank" rel="noreferrer">
@@ -1914,15 +2068,31 @@ function PropertyCard({
                 type="submit"
                 id={`buy-${key}`}
                 className="btn"
-                disabled={!me || sold >= total || busy === `buy-${key}` || !myKyc || Boolean(config?.paused)}
+                disabled={
+                  !me ||
+                  !config ||
+                  sold >= total ||
+                  busy !== null ||
+                  !myKyc ||
+                  Boolean(config?.paused) ||
+                  !Number.isInteger(shares) ||
+                  shares < 1 ||
+                  shares > remaining
+                }
               >
                 {!me
                   ? "Подключите кошелёк"
-                  : !myKyc
-                    ? "Требуется KYC"
-                    : busy === `buy-${key}`
-                      ? "Покупка…"
-                      : `Купить за $${formatToken(grossBuyCost, paymentDecimals)}`}
+                  : !config
+                    ? "Нет PlatformConfig"
+                    : config.paused
+                      ? "Протокол на паузе"
+                      : sold >= total
+                        ? "Все доли проданы"
+                        : !myKyc
+                          ? "Требуется KYC"
+                          : busy === `buy-${key}`
+                            ? "Покупка…"
+                            : `Купить за $${formatToken(grossBuyCost, paymentDecimals)}`}
               </button>
             </div>
             <span className="rules-list mono">
@@ -1959,7 +2129,7 @@ function PropertyCard({
                 type="button"
                 id={`claim-${key}`}
                 className="btn teal"
-                disabled={claimable.isZero() || busy === `claim-${key}`}
+                disabled={!config || claimable.isZero() || busy !== null}
                 onClick={onClaim}
               >
                 {busy === `claim-${key}` ? "Вывод средств…" : "Вывести арендный доход (claim_rent)"}
@@ -2000,9 +2170,22 @@ function PropertyCard({
                 type="submit"
                 id={`deposit-${key}`}
                 className="btn ghost"
-                disabled={busy === `dep-${key}` || sold === 0 || Boolean(config?.paused)}
+                disabled={
+                  !config ||
+                  busy !== null ||
+                  sold === 0 ||
+                  Boolean(config?.paused) ||
+                  !Number.isFinite(rentUsdc) ||
+                  rentUsdc <= 0
+                }
               >
-                {busy === `dep-${key}` ? "Внесение…" : "Внести аренду (deposit_rent)"}
+                {config?.paused
+                  ? "Протокол на паузе"
+                  : sold === 0
+                    ? "Нет держателей долей"
+                    : busy === `dep-${key}`
+                      ? "Внесение…"
+                      : "Внести аренду (deposit_rent)"}
               </button>
             </div>
           </div>

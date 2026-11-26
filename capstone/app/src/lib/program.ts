@@ -79,6 +79,7 @@ export function bpsOf(amount: BN, bps: number): BN {
 
 export function formatToken(raw: BN | number | bigint, decimals = 6, maxFrac = 2): string {
   const n = typeof raw === "number" ? raw : Number(raw.toString());
+  if (!Number.isFinite(n)) return "0";
   return (n / 10 ** decimals).toLocaleString("en-US", {
     minimumFractionDigits: 0,
     maximumFractionDigits: maxFrac,
@@ -86,7 +87,18 @@ export function formatToken(raw: BN | number | bigint, decimals = 6, maxFrac = 2
 }
 
 export function toRawUnits(humanAmount: number, decimals = 6): BN {
+  if (!Number.isFinite(humanAmount) || humanAmount <= 0) return new BN(0);
   return new BN(Math.round(humanAmount * 10 ** decimals));
+}
+
+export function parsePublicKey(raw: string): PublicKey | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    return new PublicKey(trimmed);
+  } catch {
+    return null;
+  }
 }
 
 export function shortKey(pk: PublicKey | string): string {

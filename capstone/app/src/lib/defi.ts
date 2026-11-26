@@ -34,6 +34,7 @@ export interface DeFiTelemetry {
   usdcUsd: PythFeedSnapshot | null;
   jupiterQuote: JupiterQuoteSummary | null;
   kaminoUsdcSupplyApyPct: number;
+  synced: boolean;
 }
 
 /**
@@ -98,6 +99,7 @@ export function useDeFiTelemetry(refreshMs = 30_000): DeFiTelemetry {
     usdcUsd: null,
     jupiterQuote: null,
     kaminoUsdcSupplyApyPct: 4.85,
+    synced: false,
   });
 
   useEffect(() => {
@@ -154,10 +156,13 @@ export function useDeFiTelemetry(refreshMs = 30_000): DeFiTelemetry {
             usdcUsd,
             jupiterQuote,
             kaminoUsdcSupplyApyPct: 4.85,
+            synced: true,
           });
         }
       } catch {
-        // Ignore transient RPC errors on localnet
+        if (alive) {
+          setState((prev) => ({ ...prev, synced: true }));
+        }
       }
     };
     load();

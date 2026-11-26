@@ -6,6 +6,22 @@ import { evaluateProperty, type PropertyInput } from "@/lib/scoring";
 
 const execFileAsync = promisify(execFile);
 
+async function runPythonScore(pyScript: string, payloadJson: string): Promise<{ raw: string; bin: string }> {
+  const candidates = process.platform === "win32" ? ["python", "python3"] : ["python3", "python"];
+  let lastError: unknown;
+  for (const bin of candidates) {
+    try {
+      const { stdout } = await execFileAsync(bin, ["-c", pyScript, payloadJson], { timeout: 4000 });
+      return { raw: stdout.trim(), bin };
+    } catch (e: unknown) {
+      lastError = e;
+      if ((e as NodeJS.ErrnoException)?.code === "ENOENT") continue;
+      throw e;
+    }
+  }
+  throw lastError ?? new Error("Python interpreter not found");
+}
+
 /**
  * POST /api/score
  * Runs `capstone/scoring/engine.py` directly via Python 3 to compute and verify
@@ -52,10 +68,10 @@ out["engine_source"] = "python3 (capstone/scoring/engine.py)"
 print(json.dumps(out))
 `;
     try {
-      const { stdout } = await execFileAsync("python3", ["-c", pyScript, JSON.stringify(body)], {
-        timeout: 4000,
-      });
-      return NextResponse.json(JSON.parse(stdout.trim()));
+      const { raw, bin } = await runPythonScore(pyScript, JSON.stringify(body));
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      parsed.engine_source = `${bin} (capstone/scoring/engine.py)`;
+      return NextResponse.json(parsed);
     } catch {
       const fallback = evaluateProperty(body);
       return NextResponse.json({ ...fallback, engine_source: "typescript-fallback" });
