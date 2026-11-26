@@ -616,7 +616,13 @@ export default function CapstonePage() {
                   </span>
                   <span className="tech-item-sub">
                     {defi.usdcUsd
-                      ? `Peg: ${Math.abs(defi.usdcUsd.price - 1) < 0.005 ? "✓ В пределах 50 bps" : "! Отклонение"} · age ${defi.usdcUsd.ageSec}s`
+                      ? `Peg: ${
+                          !defi.usdcUsd.healthy
+                            ? "! Цена не прошла проверки оракула"
+                            : Math.abs(defi.usdcUsd.price - 1) < 0.005
+                              ? "✓ В пределах 50 bps"
+                              : "! Отклонение"
+                        } · age ${defi.usdcUsd.ageSec}s`
                       : "Контроль расчётного стейблкоина"}
                   </span>
                 </div>
@@ -626,8 +632,8 @@ export default function CapstonePage() {
                   <span className="tech-item-value">
                     {defi.jupiterQuote
                       ? `$${defi.jupiterQuote.outUsdc.toFixed(2)} USDC`
-                      : defi.solUsd
-                        ? `≈ $${defi.solUsd.conservativePrice.toFixed(2)} USDC (Pyth)`
+                      : defi.solUsd?.healthy
+                        ?`≈ $${defi.solUsd.conservativePrice.toFixed(2)} USDC (Pyth)`
                         : "Запрос маршрута…"}
                   </span>
                   <span className="tech-item-sub">
@@ -820,7 +826,7 @@ export default function CapstonePage() {
                     myKyc={Boolean(myKyc)}
                     matchedReport={matched?.report}
                     matchedCity={matched?.input.city}
-                    solUsd={defi.solUsd?.conservativePrice ?? null}
+                    solUsd={defi.solUsd?.healthy ? defi.solUsd.conservativePrice : null}
                     busy={busy}
                     onBuy={(shares) =>
                       run(`buy-${p.publicKey.toBase58()}`, `Куплено долей: ${shares}`, async () => {
