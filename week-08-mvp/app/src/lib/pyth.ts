@@ -43,7 +43,7 @@ export function useSolUsd(refreshMs = 30_000): number | null {
         const acc = await connection.getAccountInfo(SOL_USD_FEED);
         if (!acc || !acc.owner.equals(PYTH_RECEIVER)) return alive && setUsd(null);
         const p = decode(acc.data);
-        const ok = p.full && p.ageSec < 600 && p.conf / p.price < 0.02;
+        const ok = p.full && p.price > 0 && p.ageSec < 600 && p.conf / p.price < 0.02;
         if (alive) setUsd(ok ? p.price : null);
       } catch {
         if (alive) setUsd(null);
