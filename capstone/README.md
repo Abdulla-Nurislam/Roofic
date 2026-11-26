@@ -86,7 +86,7 @@ npm run dev           # http://localhost:3014
 
 ## Тесты смарт-контракта (LiteSVM)
 
-В [`programs/roofic/tests/roofic_test.rs`](programs/roofic/tests/roofic_test.rs) — **22 интеграционных теста**, проверяющих все инварианты, роли, коды ошибок, защиту от эксплойтов и закон сохранения денег как для классического **SPL Token (USDC)**, так и для **Token-2022 (PYUSD)**:
+В [`programs/roofic/tests/roofic_test.rs`](programs/roofic/tests/roofic_test.rs) — **22 интеграционных теста** LiteSVM, проверяющих все инварианты, роли, коды ошибок, защиту от эксплойтов и закон сохранения денег как для классического **SPL Token (USDC)**, так и для **Token-2022 (PYUSD)**. Отдельно в том же файле лежит `devnet_smoke_checks_deployed_platform_and_properties`: без `ROOFIC_DEVNET=1` он сразу завершается, в CI не запускается и в таблицу ниже не входит.
 
 ```bash
 anchor build
