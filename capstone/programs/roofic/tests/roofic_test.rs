@@ -924,6 +924,19 @@ fn deposit_rejects_vault_that_does_not_belong_to_the_property() {
     assert_eq!(w.token_balance(&w.vault), vault_before);
 }
 
+#[test]
+fn buy_rejects_zero_shares() {
+    let mut w = world(legacy_token());
+    let alice = alice(&w);
+    let before = w.token_balance(&w.pay_account(&alice.pubkey()));
+
+    let err = w.buy(&alice, 0).expect_err("zero shares");
+    assert!(err.contains(&custom(RooficError::InvalidShares)), "got {err}");
+    assert_eq!(w.token_balance(&w.pay_account(&alice.pubkey())), before);
+    assert_eq!(w.property_state().shares_sold, 0);
+    assert!(w.position(&alice.pubkey()).is_none(), "a rejected buy must not open a position");
+}
+
 // ---------------------------------------------------------------------------
 // Money conservation, both payment programs
 // ---------------------------------------------------------------------------
