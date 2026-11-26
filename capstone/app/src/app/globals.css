@@ -1059,9 +1059,28 @@ table.data-table tr:hover tbody th {
   margin-block-end: 16px;
 }
 
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .filter-search {
-  max-inline-size: 320px;
-  min-inline-size: 220px;
+  max-inline-size: 280px;
+  min-inline-size: 200px;
+}
+
+.filter-sort {
+  flex: none;
+  inline-size: auto;
+  min-inline-size: 190px;
+  cursor: pointer;
+}
+
+.yield-est {
+  font-size: 0.74rem;
+  color: var(--emerald-light);
 }
 
 .hash-header {

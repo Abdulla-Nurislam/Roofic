@@ -89,6 +89,9 @@ export default function CapstonePage() {
   const [activeSection, setActiveSection] = useState<string>("overview");
   const [propFilter, setPropFilter] = useState<"all" | "available" | "mine" | "managed">("all");
   const [propQuery, setPropQuery] = useState<string>("");
+  const [propSort, setPropSort] = useState<"newest" | "price_asc" | "price_desc" | "sold_desc" | "yield_desc">(
+    "newest",
+  );
   const [copiedHash, setCopiedHash] = useState<boolean>(false);
   const refreshSeqRef = useRef(0);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -290,7 +293,7 @@ export default function CapstonePage() {
 
   const filteredProperties = useMemo(() => {
     const q = propQuery.trim().toLowerCase();
-    return properties.filter((p) => {
+    const list = properties.filter((p) => {
       const key = p.publicKey.toBase58();
       if (propFilter === "available" && !p.account.sharesSold.lt(p.account.totalShares)) return false;
       if (propFilter === "mine" && !positions[key]) return false;
@@ -306,7 +309,32 @@ export default function CapstonePage() {
         p.account.shareMint.toBase58().toLowerCase().includes(q)
       );
     });
-  }, [properties, propFilter, propQuery, positions, publicKey, customReports]);
+
+    const getFillRatio = (p: Property) => {
+      const total = Number(p.account.totalShares.toString());
+      return total > 0 ? Number(p.account.sharesSold.toString()) / total : 0;
+    };
+    const getBaseYield = (p: Property) => {
+      const hashHex = bytesToHex(p.account.valuationHash);
+      return (KNOWN_REPORTS_BY_HASH[hashHex] ?? customReports[hashHex])?.report.net_yield_base ?? -1;
+    };
+
+    return [...list].sort((a, b) => {
+      switch (propSort) {
+        case "price_asc":
+          return a.account.pricePerShare.cmp(b.account.pricePerShare);
+        case "price_desc":
+          return b.account.pricePerShare.cmp(a.account.pricePerShare);
+        case "sold_desc":
+          return getFillRatio(b) - getFillRatio(a);
+        case "yield_desc":
+          return getBaseYield(b) - getBaseYield(a);
+        case "newest":
+        default:
+          return b.account.id.cmp(a.account.id);
+      }
+    });
+  }, [properties, propFilter, propQuery, propSort, positions, publicKey, customReports]);
 
   const copyValuationHash = async (hex: string) => {
     try {
@@ -946,14 +974,28 @@ export default function CapstonePage() {
                   </button>
                 ))}
               </div>
-              <input
-                type="search"
-                className="input filter-search"
-                placeholder="Поиск по названию, городу или адресу…"
-                aria-label="Поиск объектов недвижимости"
-                value={propQuery}
-                onChange={(e) => setPropQuery(e.target.value)}
-              />
+              <div className="filter-controls">
+                <input
+                  type="search"
+                  className="input filter-search"
+                  placeholder="Поиск по названию, городу или адресу…"
+                  aria-label="Поиск объектов недвижимости"
+                  value={propQuery}
+                  onChange={(e) => setPropQuery(e.target.value)}
+                />
+                <select
+                  className="input filter-sort"
+                  aria-label="Сортировка объектов"
+                  value={propSort}
+                  onChange={(e) => setPropSort(e.target.value as typeof propSort)}
+                >
+                  <option value="newest">Сначала новые</option>
+                  <option value="yield_desc">По доходности (убыв.)</option>
+                  <option value="sold_desc">По заполнению пула</option>
+                  <option value="price_asc">Цена доли: дешевле</option>
+                  <option value="price_desc">Цена доли: дороже</option>
+                </select>
+              </div>
             </div>
           )}
 
@@ -980,6 +1022,7 @@ export default function CapstonePage() {
                 onClick={() => {
                   setPropFilter("all");
                   setPropQuery("");
+                  setPropSort("newest");
                 }}
               >
                 Сбросить фильтры
@@ -2258,6 +2301,18 @@ function PropertyCard({
               Владельцу: ${formatToken(ownerProceeds, paymentDecimals)} USDC · Комиссия протокола: $
               {formatToken(saleFee, paymentDecimals)} USDC
             </span>
+            {matchedReport && safeShares > 0 && (
+              <span className="yield-est mono">
+                Прогноз чистой аренды (Base): ~$
+                {((Number(grossBuyCost.toString()) / 10 ** paymentDecimals) * matchedReport.net_yield_base).toFixed(2)}{" "}
+                / год (~$
+                {(
+                  ((Number(grossBuyCost.toString()) / 10 ** paymentDecimals) * matchedReport.net_yield_base) /
+                  12
+                ).toFixed(2)}{" "}
+                / мес.)
+              </span>
+            )}
           </div>
         </form>
       )}
