@@ -925,7 +925,53 @@ fn deposit_rejects_vault_that_does_not_belong_to_the_property() {
 }
 
 #[test]
-fn buy_rejects_zero_shares() {
+fn claim_rejects_vault_that_does_not_belong_to_the_property() {
+    let mut w = world(legacy_token());
+    let alice = alice(&w);
+    let manager = w.manager.insecure_clone();
+    w.buy(&alice, 10).expect("shareholder");
+    let mp = w.manager_pay;
+    w.deposit_rent(&manager, mp, 100 * USDC).expect("rent to claim");
+
+    let decoy = Pubkey::new_unique();
+    w.svm
+        .set_account(
+            decoy,
+            Account {
+                lamports: 10_000_000,
+                data: token_account_bytes(&w.payment_mint, &w.property, 0),
+                owner: w.payment_program,
+                executable: false,
+                rent_epoch: 0,
+            },
+        )
+        .unwrap();
+
+    let mut metas = accounts::ClaimRent {
+        config: w.config,
+        property: w.property,
+        position: w.position_pda(&alice.pubkey()),
+        vault: w.vault,
+        payment_mint: w.payment_mint,
+        investor_payment: w.pay_account(&alice.pubkey()),
+        investor: alice.pubkey(),
+        payment_token_program: w.payment_program,
+    }
+    .to_account_metas(None);
+    for meta in &mut metas {
+        if meta.pubkey == w.vault {
+            meta.pubkey = decoy;
+        }
+    }
+    let before = w.token_balance(&w.pay_account(&alice.pubkey()));
+    let vault_before = w.token_balance(&w.vault);
+    let ix = w.ix(metas, instruction::ClaimRent {}.data());
+    let err = w.send(ix, &[&alice]).expect_err("foreign vault on claim");
+    assert!(err.contains(&custom(RooficError::WrongVault)), "got {err}");
+    assert_eq!(w.token_balance(&w.pay_account(&alice.pubkey())), before);
+    assert_eq!(w.token_balance(&w.vault), vault_before);
+    assert_eq!(w.position(&alice.pubkey()).unwrap().total_claimed, 0);
+}
     let mut w = world(legacy_token());
     let alice = alice(&w);
     let before = w.token_balance(&w.pay_account(&alice.pubkey()));
