@@ -86,7 +86,7 @@ npm run dev           # http://localhost:3014
 
 ## Тесты смарт-контракта (LiteSVM)
 
-В [`programs/roofic/tests/roofic_test.rs`](programs/roofic/tests/roofic_test.rs) — **29 интеграционных тестов** LiteSVM, проверяющих все инварианты, роли, коды ошибок, защиту от эксплойтов и закон сохранения денег как для классического **SPL Token (USDC)**, так и для **Token-2022 (PYUSD)**. Отдельно в том же файле лежит `devnet_smoke_checks_deployed_platform_and_properties`: без `ROOFIC_DEVNET=1` он сразу завершается, в CI не запускается и в таблицу ниже не входит.
+В [`programs/roofic/tests/roofic_test.rs`](programs/roofic/tests/roofic_test.rs) — **31 интеграционный тест** LiteSVM, проверяющих все инварианты, роли, коды ошибок, защиту от эксплойтов и закон сохранения денег как для классического **SPL Token (USDC)**, так и для **Token-2022 (PYUSD)**. Отдельно в том же файле лежит `devnet_smoke_checks_deployed_platform_and_properties`: без `ROOFIC_DEVNET=1` он сразу завершается, в CI не запускается и в таблицу ниже не входит.
 
 ```bash
 anchor build
@@ -125,3 +125,5 @@ cargo clippy --all-targets -- -D warnings
 | 27 | `listing_rejects_a_name_longer_than_48_bytes` | Имя длиннее 48 байт отвергается, имя ровно из 48 байт сохраняется |
 | 28 | `buy_rejects_share_mint_that_does_not_belong_to_the_property` | Чужой share mint даёт `WrongShareMint`, оплата и `shares_sold` не меняются |
 | 29 | `deposit_rejects_vault_that_does_not_belong_to_the_property` | Чужой vault даёт `WrongVault`, баланс manager и настоящий сейф не меняются |
+| 30 | `buy_rejects_zero_shares` | `buy_shares(0)` даёт `InvalidShares`, позиция и оплата не появляются |
+| 31 | `updated_rent_fee_applies_to_the_next_deposit` | Новая `rent_fee_bps` делит следующий депозит аренды |
