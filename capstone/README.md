@@ -68,7 +68,7 @@ flowchart TB
 
 ```bash
 cd scoring
-python3 -m unittest -v      # 5 тестов (включая кириллический UTF-8 хэш-паритет с TS)
+python3 -m unittest -v      # 7 тестов (включая кириллический UTF-8 хэш-паритет с TS)
 python3 engine.py
 ```
 
