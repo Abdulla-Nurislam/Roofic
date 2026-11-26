@@ -145,6 +145,12 @@ jobs:
           npm run typecheck
           npm run build
 
+      - name: Week 7 — SPL Token scripts typecheck
+        working-directory: week-07-spl-token
+        run: |
+          npm ci
+          npm run typecheck
+
       - name: Week 8 — MVP App typecheck + build
         working-directory: week-08-mvp/app
         run: |
