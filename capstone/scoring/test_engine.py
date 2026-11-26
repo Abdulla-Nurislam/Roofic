@@ -59,6 +59,18 @@ class ScoringEngineTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             evaluate_property(replace(self.sample, vacancy_rate=1.0))
 
+    def test_non_finite_and_out_of_range_inputs_rejected(self) -> None:
+        for override in (
+            {"price_usd": float("nan")},
+            {"price_usd": float("inf")},
+            {"building_age_years": float("nan")},
+            {"opex_ratio": -0.1, "manager_fee_ratio": 0.2},
+            {"platform_rent_fee_bps": 10_001},
+            {"platform_sale_fee_bps": -1},
+        ):
+            with self.subTest(**override), self.assertRaises(ValueError):
+                evaluate_property(replace(self.sample, **override))
+
     def test_cyrillic_utf8_hash_matches_typescript_engine(self) -> None:
         cyr = PropertyInput(
             property_id=2,

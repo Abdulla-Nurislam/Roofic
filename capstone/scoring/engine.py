@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from dataclasses import asdict, dataclass
 
 
@@ -56,7 +57,28 @@ def _net_yield(
     return noi * (1.0 - platform_rent_fee_bps / 10_000.0)
 
 
+_NUMERIC_FIELDS = (
+    "property_id",
+    "price_usd",
+    "gross_yield",
+    "vacancy_rate",
+    "opex_ratio",
+    "manager_fee_ratio",
+    "platform_rent_fee_bps",
+    "platform_sale_fee_bps",
+    "building_age_years",
+)
+
+
 def evaluate_property(inp: PropertyInput) -> ScoreReport:
+    for field in _NUMERIC_FIELDS:
+        if not math.isfinite(getattr(inp, field)):
+            raise ValueError(f"{field} must be a finite number")
+    if inp.opex_ratio < 0 or inp.manager_fee_ratio < 0:
+        raise ValueError("opex_ratio and manager_fee_ratio must be non-negative")
+    for field in ("platform_rent_fee_bps", "platform_sale_fee_bps"):
+        if not 0 <= getattr(inp, field) <= 10_000:
+            raise ValueError(f"{field} must be in [0, 10000]")
     if inp.price_usd <= 0:
         raise ValueError("price_usd must be positive")
     if not (0 < inp.gross_yield < 0.5):

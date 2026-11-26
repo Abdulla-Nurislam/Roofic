@@ -178,7 +178,29 @@ export function hexToBytes(hex: string): number[] {
   return out;
 }
 
+const NUMERIC_FIELDS = [
+  "property_id",
+  "price_usd",
+  "gross_yield",
+  "vacancy_rate",
+  "opex_ratio",
+  "manager_fee_ratio",
+  "platform_rent_fee_bps",
+  "platform_sale_fee_bps",
+  "building_age_years",
+] as const;
+
 export function evaluateProperty(inp: PropertyInput): ScoreReport {
+  for (const field of NUMERIC_FIELDS) {
+    // Number.isFinite also rejects missing fields and numeric strings from untyped JSON
+    if (!Number.isFinite(inp[field])) throw new Error(`${field} must be a finite number`);
+  }
+  if (inp.opex_ratio < 0 || inp.manager_fee_ratio < 0) {
+    throw new Error("opex_ratio and manager_fee_ratio must be non-negative");
+  }
+  for (const field of ["platform_rent_fee_bps", "platform_sale_fee_bps"] as const) {
+    if (!(inp[field] >= 0 && inp[field] <= 10_000)) throw new Error(`${field} must be in [0, 10000]`);
+  }
   if (inp.price_usd <= 0) throw new Error("price_usd must be positive");
   if (!(inp.gross_yield > 0 && inp.gross_yield < 0.5)) throw new Error("gross_yield must be in (0, 0.5)");
   if (!(inp.vacancy_rate >= 0 && inp.vacancy_rate < 1)) throw new Error("vacancy_rate must be in [0, 1)");
