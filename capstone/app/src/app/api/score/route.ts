@@ -14,7 +14,17 @@ const execFileAsync = promisify(execFile);
  */
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as PropertyInput;
+    const raw = (await req.json()) as Partial<PropertyInput> | null;
+    if (!raw || typeof raw.name !== "string" || typeof raw.city !== "string") {
+      return NextResponse.json({ error: "name and city must be strings" }, { status: 400 });
+    }
+    // Same defaults as `PropertyInput` in engine.py, applied before either engine runs
+    const body = {
+      ...raw,
+      platform_rent_fee_bps: raw.platform_rent_fee_bps ?? 100,
+      platform_sale_fee_bps: raw.platform_sale_fee_bps ?? 150,
+      building_age_years: raw.building_age_years ?? 5,
+    } as PropertyInput;
     const scoringDir = path.resolve(process.cwd(), "..", "scoring");
     const pyScript = `
 import json, sys
