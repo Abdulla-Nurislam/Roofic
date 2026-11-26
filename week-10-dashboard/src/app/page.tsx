@@ -3,7 +3,7 @@
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { PublicKey } from "@solana/web3.js";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bars, Sparkline } from "@/components/charts";
 import { useAsync } from "@/lib/hooks";
 import {
@@ -78,8 +78,8 @@ function ClusterSection({ network }: { network: NetworkId }) {
             <code>getVersion</code> с интервалом опроса 15 секунд.
           </p>
         </div>
-        <button type="button" className="btn ghost sm" onClick={reload}>
-          Опросить RPC
+        <button type="button" className="btn ghost sm" disabled={loading} onClick={reload}>
+          {loading ? "Опрос…" : "Опросить RPC"}
         </button>
       </div>
 
@@ -168,13 +168,33 @@ function PortfolioAndTxSections({ network }: { network: NetworkId }) {
   const { connection } = useConnection();
   const { publicKey } = useWallet();
   const [input, setInput] = useState("");
+  const [copiedAddr, setCopiedAddr] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (publicKey) setInput(publicKey.toBase58());
   }, [publicKey]);
 
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
   const owner = useMemo(() => parseKey(input), [input]);
   const key = owner ? `${network}:${owner.toBase58()}` : null;
+
+  const copyAddress = async () => {
+    if (!owner) return;
+    try {
+      await navigator.clipboard?.writeText(owner.toBase58());
+      setCopiedAddr(true);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopiedAddr(false), 2000);
+    } catch {
+      // Ignore clipboard permission errors
+    }
+  };
 
   const balance = useAsync(() => fetchSolBalance(connection, owner!), key && `bal:${key}`, 30_000);
   const tokens = useAsync(() => fetchTokens(connection, owner!), key && `tok:${key}`, 30_000);
@@ -220,6 +240,11 @@ function PortfolioAndTxSections({ network }: { network: NetworkId }) {
                   onChange={(e) => setInput(e.target.value)}
                   spellCheck={false}
                 />
+                {owner && (
+                  <button type="button" className="btn ghost sm" onClick={copyAddress}>
+                    {copiedAddr ? "✓ Скопировано" : "Копировать"}
+                  </button>
+                )}
                 {input && (
                   <button type="button" className="btn ghost" onClick={() => setInput("")}>
                     Сброс
@@ -335,8 +360,8 @@ function PortfolioAndTxSections({ network }: { network: NetworkId }) {
             </p>
           </div>
           {owner && (
-            <button type="button" className="btn ghost sm" onClick={txs.reload}>
-              Обновить журнал
+            <button type="button" className="btn ghost sm" disabled={txs.loading} onClick={txs.reload}>
+              {txs.loading ? "Загрузка…" : "Обновить журнал"}
             </button>
           )}
         </div>
@@ -563,8 +588,36 @@ function ProgramsSection({ network }: { network: NetworkId }) {
 }
 
 // ---------------------------------------------------------------------------
+const DASH_SECTIONS = [
+  { id: "cluster", label: "Кластер" },
+  { id: "portfolio", label: "Адрес и Токены" },
+  { id: "transactions", label: "Журнал TX" },
+  { id: "programs", label: "Программы" },
+] as const;
+
 export default function Dashboard() {
   const { network, setNetwork } = useNetwork();
+  const [activeSection, setActiveSection] = useState<string>("cluster");
+
+  useEffect(() => {
+    const els = DASH_SECTIONS.map((s) => document.getElementById(s.id)).filter(
+      (el): el is HTMLElement => el !== null,
+    );
+    if (els.length === 0 || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible?.target.id) {
+          setActiveSection(visible.target.id);
+        }
+      },
+      { rootMargin: "-20% 0px -55% 0px", threshold: [0.1, 0.3, 0.6] },
+    );
+    for (const el of els) observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <>
@@ -579,18 +632,16 @@ export default function Dashboard() {
           </div>
 
           <nav className="nav-links" aria-label="Секции дашборда">
-            <a href="#cluster" className="nav-link">
-              Кластер
-            </a>
-            <a href="#portfolio" className="nav-link">
-              Адрес и Токены
-            </a>
-            <a href="#transactions" className="nav-link">
-              Журнал TX
-            </a>
-            <a href="#programs" className="nav-link">
-              Программы
-            </a>
+            {DASH_SECTIONS.map((sec) => (
+              <a
+                key={sec.id}
+                href={`#${sec.id}`}
+                className={`nav-link ${activeSection === sec.id ? "active" : ""}`}
+                onClick={() => setActiveSection(sec.id)}
+              >
+                {sec.label}
+              </a>
+            ))}
           </nav>
 
           <div className="header-actions">

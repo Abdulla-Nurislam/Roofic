@@ -41,13 +41,21 @@ export function Providers({ children }: { children: ReactNode }) {
   const [network, setNetworkState] = useState<NetworkId>("devnet");
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && saved in NETWORKS) setNetworkState(saved as NetworkId);
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved && saved in NETWORKS) setNetworkState(saved as NetworkId);
+    } catch {
+      // Ignore restricted storage errors
+    }
   }, []);
 
   const setNetwork = (n: NetworkId) => {
     setNetworkState(n);
-    localStorage.setItem(STORAGE_KEY, n);
+    try {
+      localStorage.setItem(STORAGE_KEY, n);
+    } catch {
+      // Ignore restricted storage errors
+    }
   };
 
   const wallets = useMemo(() => [], []);

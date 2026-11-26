@@ -149,6 +149,12 @@ a:hover {
   transform: translateY(1px);
 }
 
+.nav-link.active {
+  color: var(--emerald-light);
+  background-color: var(--emerald-tint);
+  border-color: var(--emerald-border);
+}
+
 .nav-index {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
