@@ -31,7 +31,7 @@ python3 -m unittest discover -s capstone/scoring -v
 python3 -m unittest discover -s week-13-rwa-design/model -v
 
 # 4. Фронтенд Next.js (Capstone)
-cd capstone/app && npm run typecheck && npm run build
+cd capstone/app && npm test && npm run typecheck && npm run build
 ```
 
 ## 4. Правила безопасности и Definition of Done
