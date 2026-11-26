@@ -1259,6 +1259,67 @@ fn fee_bearing_payment_mint_is_rejected_at_init() {
     assert!(err.contains(&custom(RooficError::UnsupportedPaymentMint)), "got {err}");
 }
 
+fn assert_extension_mint_rejected(ext: ExtensionType, payload_len: usize) {
+    let mut svm = LiteSVM::new();
+    svm.add_program_from_file(roofic::id(), "../../target/deploy/roofic.so").unwrap();
+
+    let admin = Keypair::new();
+    svm.airdrop(&admin.pubkey(), 10 * SOL).unwrap();
+    set_upgrade_authority(&mut svm, &admin.pubkey());
+
+    // Same TLV layout as the TransferFee fixture: mint bytes, padding, AccountType, type, len, payload.
+    let mut mint_data = vec![0u8; 170 + payload_len];
+    mint_data[44] = 6;
+    mint_data[45] = 1;
+    mint_data[165] = 1;
+    mint_data[166..168].copy_from_slice(&(ext as u16).to_le_bytes());
+    mint_data[168..170].copy_from_slice(&(payload_len as u16).to_le_bytes());
+
+    let payment_mint = Pubkey::new_unique();
+    svm.set_account(
+        payment_mint,
+        Account { lamports: 10_000_000, data: mint_data, owner: token_2022(), executable: false, rent_epoch: 0 },
+    )
+    .unwrap();
+    let treasury = Pubkey::new_unique();
+    svm.set_account(
+        treasury,
+        Account {
+            lamports: 10_000_000,
+            data: token_account_bytes(&payment_mint, &admin.pubkey(), 0),
+            owner: token_2022(),
+            executable: false,
+            rent_epoch: 0,
+        },
+    )
+    .unwrap();
+
+    let ix = Instruction {
+        program_id: roofic::id(),
+        accounts: accounts::InitializePlatform {
+            config: pda(&[b"config"]),
+            payment_mint,
+            treasury,
+            admin: admin.pubkey(),
+            program: roofic::id(),
+            program_data: program_data_pda(),
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: instruction::InitializePlatform { rent_fee_bps: 100, sale_fee_bps: 150 }.data(),
+    };
+    let tx = Transaction::new(&[&admin], Message::new(&[ix], Some(&admin.pubkey())), svm.latest_blockhash());
+    let err = format!("{:?}", svm.send_transaction(tx).unwrap_err().err);
+    assert!(err.contains(&custom(RooficError::UnsupportedPaymentMint)), "{ext:?} got {err}");
+}
+
+#[test]
+fn initialize_platform_rejects_transfer_hook_and_permanent_delegate() {
+    // Pod sizes: TransferHook is two OptionalNonZeroPubkey (64), PermanentDelegate is one (32).
+    assert_extension_mint_rejected(ExtensionType::TransferHook, 64);
+    assert_extension_mint_rejected(ExtensionType::PermanentDelegate, 32);
+}
+
 // ---------------------------------------------------------------------------
 // Optional Devnet smoke test (skipped by default / in CI; run with ROOFIC_DEVNET=1)
 // ---------------------------------------------------------------------------
