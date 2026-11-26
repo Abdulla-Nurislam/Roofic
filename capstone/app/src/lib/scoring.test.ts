@@ -4,8 +4,29 @@ import { describe, test } from "node:test";
 import { BN } from "@anchor-lang/core";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { PYTH_RECEIVER, SOL_USD_FEED, decodePriceUpdateV2 } from "./defi";
-import { ACC_SCALE, bpsOf, formatToken, parsePublicKey, pendingRent, toRawUnits } from "./program";
-import { PRESET_CATALOG, bytesToHex, evaluateProperty, sha256Bytes, type PropertyInput } from "./scoring";
+import {
+  ACC_SCALE,
+  bpsOf,
+  configPda,
+  formatToken,
+  investorPda,
+  parsePublicKey,
+  pendingRent,
+  positionPda,
+  propertyPda,
+  shareMintPda,
+  toRawUnits,
+  vaultPda,
+} from "./program";
+import {
+  KNOWN_REPORTS_BY_HASH,
+  PRESET_CATALOG,
+  bytesToHex,
+  evaluateProperty,
+  hexToBytes,
+  sha256Bytes,
+  type PropertyInput,
+} from "./scoring";
 
 const sampleInput: PropertyInput = PRESET_CATALOG[0].input;
 
@@ -101,6 +122,19 @@ describe("scoring.ts", () => {
       assert.throws(() => evaluateProperty({ ...sampleInput, ...bad }));
     }
   });
+
+  test("round-trips bytesToHex/hexToBytes and builds KNOWN_REPORTS_BY_HASH", () => {
+    const rep = evaluateProperty(sampleInput);
+    const bytes = hexToBytes(`0x${rep.valuation_hash_hex}`);
+    assert.equal(bytes.length, 32);
+    assert.equal(bytesToHex(bytes), rep.valuation_hash_hex);
+    assert.deepEqual(hexToBytes("deadbeef"), new Array(32).fill(0));
+
+    for (const item of PRESET_CATALOG) {
+      const r = evaluateProperty(item.input);
+      assert.equal(KNOWN_REPORTS_BY_HASH[r.valuation_hash_hex]?.input.name, item.input.name);
+    }
+  });
 });
 
 describe("program.ts helpers", () => {
@@ -122,6 +156,20 @@ describe("program.ts helpers", () => {
     assert.equal(parsePublicKey(` ${kp.toBase58()} `)?.toBase58(), kp.toBase58());
     assert.equal(parsePublicKey("not-a-pubkey"), null);
     assert.equal(parsePublicKey("   "), null);
+  });
+
+  test("derives deterministic and distinct PDAs across owners and property IDs", () => {
+    const ownerA = Keypair.generate().publicKey;
+    const ownerB = Keypair.generate().publicKey;
+    assert.equal(configPda().toBase58(), configPda().toBase58());
+    assert.notEqual(investorPda(ownerA).toBase58(), investorPda(ownerB).toBase58());
+
+    const prop1 = propertyPda(ownerA, new BN(1));
+    const prop2 = propertyPda(ownerA, new BN(2));
+    assert.equal(prop1.toBase58(), propertyPda(ownerA, new BN(1)).toBase58());
+    assert.notEqual(prop1.toBase58(), prop2.toBase58());
+    assert.notEqual(shareMintPda(prop1).toBase58(), vaultPda(prop1).toBase58());
+    assert.notEqual(positionPda(prop1, ownerA).toBase58(), positionPda(prop1, ownerB).toBase58());
   });
 });
 
@@ -156,5 +204,35 @@ describe("defi.ts Pyth PriceUpdateV2 decoder", () => {
     );
     assert.ok(zeroPrice);
     assert.equal(zeroPrice.healthy, false);
+  });
+
+  test("marks stale, wide-conf, and negative Pyth prices as unhealthy", () => {
+    const staleSec = BigInt(Math.floor(Date.now() / 1000) - 900);
+    const stale = decodePriceUpdateV2(
+      "SOL/USD",
+      SOL_USD_FEED,
+      PYTH_RECEIVER,
+      buildPriceUpdateV2({ level: 1, publishTime: staleSec }),
+    );
+    assert.ok(stale);
+    assert.equal(stale.healthy, false);
+
+    const wideConf = decodePriceUpdateV2(
+      "SOL/USD",
+      SOL_USD_FEED,
+      PYTH_RECEIVER,
+      buildPriceUpdateV2({ level: 1, price: 100_00000000n, conf: 3_00000000n }),
+    );
+    assert.ok(wideConf);
+    assert.equal(wideConf.healthy, false);
+
+    const negPrice = decodePriceUpdateV2(
+      "SOL/USD",
+      SOL_USD_FEED,
+      PYTH_RECEIVER,
+      buildPriceUpdateV2({ level: 1, price: -100_00000000n, conf: 10000000n }),
+    );
+    assert.ok(negPrice);
+    assert.equal(negPrice.healthy, false);
   });
 });
