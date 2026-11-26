@@ -47,10 +47,12 @@ export function decodePriceUpdateV2(
   owner: PublicKey,
   data: Uint8Array,
 ): PythFeedSnapshot | null {
-  if (!owner.equals(PYTH_RECEIVER) || data.byteLength < 110) return null;
+  // 117 / 118 bytes (Full / Partial) is the minimum needed to read up to `ema_price`
+  if (!owner.equals(PYTH_RECEIVER) || data.byteLength < 117) return null;
   const v = new DataView(data.buffer, data.byteOffset, data.byteLength);
   let o = 8 + 32; // 8-byte Anchor discriminator + 32-byte write_authority
   const level = v.getUint8(o);
+  if (level === 0 && data.byteLength < 118) return null;
   o += level === 0 ? 2 : 1; // Partial(u8) takes 2 bytes; Full takes 1 byte
   o += 32; // feed_id [u8; 32]
 
@@ -112,29 +114,30 @@ export function useDeFiTelemetry(refreshMs = 30_000): DeFiTelemetry {
         try {
           const res = await fetch(
             `https://lite-api.jup.ag/swap/v1/quote?inputMint=${SOL_MINT}&outputMint=${USDC_MINT}&amount=1000000000&slippageBps=50`,
+            { signal: AbortSignal.timeout(10_000) },
           );
-          if (res.ok) {
-            const q = (await res.json()) as {
-              outAmount: string;
-              otherAmountThreshold: string;
-              priceImpactPct: string;
-              routePlan?: Array<{ swapInfo?: { label?: string } }>;
-            };
-            const labels = (q.routePlan ?? [])
-              .map((r) => r.swapInfo?.label)
-              .filter(Boolean)
-              .join(" → ");
-            jupiterQuote = {
-              inSol: 1,
-              outUsdc: Number(q.outAmount) / 1e6,
-              minOutUsdc: Number(q.otherAmountThreshold) / 1e6,
-              priceImpactPct: Number(q.priceImpactPct) * 100,
-              routeLabel: labels || "Jupiter v6 Aggregator",
-            };
-          }
+          // `fetch` does not reject on HTTP errors such as 429
+          if (!res.ok) throw new Error(`Jupiter quote ${res.status}`);
+          const q = (await res.json()) as {
+            outAmount: string;
+            otherAmountThreshold: string;
+            priceImpactPct: string;
+            routePlan?: Array<{ swapInfo?: { label?: string } }>;
+          };
+          const labels = (q.routePlan ?? [])
+            .map((r) => r.swapInfo?.label)
+            .filter(Boolean)
+            .join(" → ");
+          jupiterQuote = {
+            inSol: 1,
+            outUsdc: Number(q.outAmount) / 1e6,
+            minOutUsdc: Number(q.otherAmountThreshold) / 1e6,
+            priceImpactPct: Number(q.priceImpactPct) * 100,
+            routeLabel: labels || "Jupiter v6 Aggregator",
+          };
         } catch {
-          // Offline / rate-limited fallback: derive indicative quote from Pyth oracle
-          if (solUsd) {
+          // Offline / rate-limited fallback: indicative quote from a healthy Pyth oracle only
+          if (solUsd?.healthy) {
             jupiterQuote = {
               inSol: 1,
               outUsdc: solUsd.price,
