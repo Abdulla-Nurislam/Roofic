@@ -10,6 +10,7 @@ export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ?? clusterApiUrl("devnet"
 
 let nextAvailableSlot = 0;
 const MIN_GAP_MS = 140;
+const RPC_TIMEOUT_MS = 15_000;
 
 async function rpcFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const now = Date.now();
@@ -21,11 +22,21 @@ async function rpcFetch(input: RequestInfo | URL, init?: RequestInit): Promise<R
 
   const delays = [1500, 3000, 5000];
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(input, init);
-    if (res.status !== 429 || attempt >= delays.length) {
+    const timeoutSignal = AbortSignal.timeout(RPC_TIMEOUT_MS);
+    const signal =
+      init?.signal && typeof AbortSignal.any === "function"
+        ? AbortSignal.any([init.signal, timeoutSignal])
+        : (init?.signal ?? timeoutSignal);
+    const res = await fetch(input, { ...init, signal });
+    if ((res.status !== 429 && res.status !== 503) || attempt >= delays.length) {
       return res;
     }
-    await new Promise((r) => setTimeout(r, delays[attempt]));
+    const retryAfterSec = Number(res.headers.get("retry-after"));
+    const retryMs =
+      Number.isFinite(retryAfterSec) && retryAfterSec > 0
+        ? Math.min(10_000, retryAfterSec * 1000)
+        : delays[attempt];
+    await new Promise((r) => setTimeout(r, retryMs));
   }
 }
 
@@ -35,7 +46,11 @@ export function Providers({ children }: { children: ReactNode }) {
   const config = useMemo(() => ({ commitment: "confirmed" as const, fetch: rpcFetch }), []);
   return (
     <ConnectionProvider endpoint={RPC_URL} config={config}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider
+        wallets={wallets}
+        autoConnect
+        onError={(err) => console.warn("[Roofic Wallet]", err.name, err.message)}
+      >
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>

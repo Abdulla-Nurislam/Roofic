@@ -11,6 +11,7 @@ import { Connection, Keypair, PublicKey, SystemProgram, Transaction, clusterApiU
 import { NextResponse } from "next/server";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
+import path from "node:path";
 import idl from "@/idl/roofic.json";
 import type { Roofic } from "@/idl/roofic";
 
@@ -62,7 +63,7 @@ function checkRateLimit(key: string, maxRequests: number): boolean {
  * only on localnet/devnet sandbox clusters.
  */
 function loadRoleKeypair(roleEnvVar: "KYC_APPROVER_KEYPAIR_PATH" | "FAUCET_KEYPAIR_PATH"): Keypair {
-  const fallback = process.env.ADMIN_KEYPAIR_PATH ?? `${homedir()}/.config/solana/id.json`;
+  const fallback = process.env.ADMIN_KEYPAIR_PATH ?? path.join(homedir(), ".config", "solana", "id.json");
   const keypairPath = process.env[roleEnvVar] ?? fallback;
   const raw = JSON.parse(readFileSync(/*turbopackIgnore: true*/ keypairPath, "utf8")) as number[];
   return Keypair.fromSecretKey(Uint8Array.from(raw));
@@ -137,7 +138,7 @@ export async function POST(req: Request) {
 
     if (body.action === "mint_usdc") {
       const humanAmount = body.amount ?? 1_000;
-      if (!Number.isFinite(humanAmount) || humanAmount < 1 ||humanAmount > MAX_FAUCET_USDC) {
+      if (!Number.isFinite(humanAmount) || humanAmount < 1 || humanAmount > MAX_FAUCET_USDC) {
         return NextResponse.json(
           { error: `Invalid faucet amount: must be between 1 and ${MAX_FAUCET_USDC} USDC` },
           { status: 400 },
