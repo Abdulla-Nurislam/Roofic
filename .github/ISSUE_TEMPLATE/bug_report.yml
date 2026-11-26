@@ -1,0 +1,81 @@
+name: "Bug Report"
+description: "Сообщить об ошибке в смарт-контракте, модуле скоринга, веб-приложении или документации"
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо за сообщение об ошибке!
+        **Важно:** если вы обнаружили уязвимость безопасности, **не создавайте публичный issue** — следуйте инструкциям в [SECURITY.md](https://github.com/Abdulla-Nurislam/Roofic/blob/main/SECURITY.md).
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Затронутый модуль
+      description: Выберите часть репозитория, в которой проявляется проблема.
+      options:
+        - capstone/programs/roofic (Anchor-контракт)
+        - capstone/app (Next.js веб-приложение)
+        - capstone/scoring (Python/TS скоринг)
+        - week-03..week-07 (Базовые модули Rust / Solana)
+        - week-08..week-11 (MVP / DeFi / Dashboard / CPI)
+        - week-12..week-13 (Security Lab / RWA FinModel)
+        - docs / CI / инфраструктура
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Описание ошибки
+      description: Кратко и понятно опишите, что пошло не так.
+      placeholder: Например, при вызове claim_rent после revoke_investor возвращается ошибка...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Шаги для воспроизведения
+      description: Опишите точную последовательность действий или команд.
+      value: |
+        1. Перейти в директорию `...`
+        2. Выполнить команду `...`
+        3. Наблюдать ошибку `...`
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемое поведение
+      description: Что должно было произойти вместо ошибки?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи, вывод тестов или скриншоты
+      description: Вставьте вывод `cargo test`, `unittest`, консоли браузера или ID транзакции в Devnet.
+      render: shell
+
+  - type: input
+    id: environment
+    attributes:
+      label: Окружение
+      description: ОС, версии Rust / Solana CLI / Anchor / Node.js / Python / браузера.
+      placeholder: "Windows 11 / Ubuntu 24.04, Rust 1.89, Anchor 1.2.0, Node 22.x"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Проверка перед отправкой
+      options:
+        - label: Я проверил(а), что аналогичный issue ещё не открыт.
+          required: true
+        - label: В отчёте нет приватных ключей, секретов и файлов `.env*.local`.
+          required: true

@@ -1,0 +1,179 @@
+name: Roofic CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: roofic-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  SOLANA_VERSION: 4.3.0
+
+jobs:
+  rust-and-python:
+    name: Rust Labs & Python Models
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            week-03-rust-cli -> target
+            week-04-native-program -> target
+
+      - name: Week 3 — Rust CLI tests & clippy
+        working-directory: week-03-rust-cli
+        run: |
+          cargo test
+          cargo clippy --all-targets -- -D warnings
+
+      - name: Week 4 — Native Solana Program tests & clippy
+        working-directory: week-04-native-program
+        run: |
+          cargo test
+          cargo clippy --all-targets -- -D warnings
+
+      - name: Week 13 — RWA Unit Economics tests
+        working-directory: week-13-rwa-design/model
+        run: python3 -m unittest -v
+
+      - name: Week 14 — Capstone Scoring Engine tests
+        working-directory: capstone/scoring
+        run: python3 -m unittest -v
+
+  anchor-litesvm:
+    name: Anchor SBF (${{ matrix.label }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: week-05-counter
+            dir: week-05-anchor-counter
+            build: cargo build-sbf
+          - label: week-06-pda
+            dir: week-06-pda-profile
+            build: cargo build-sbf
+          - label: week-08-mvp
+            dir: week-08-mvp
+            build: cargo build-sbf
+          - label: week-11-cpi
+            dir: week-11-cpi
+            build: |
+              cargo build-sbf --manifest-path programs/roofic_shares/Cargo.toml
+              cargo build-sbf --manifest-path programs/roofic_portfolio/Cargo.toml
+          - label: week-12-security
+            dir: week-12-security-lab
+            build: |
+              cargo build-sbf --manifest-path programs/exploit_lab/Cargo.toml
+              cargo build-sbf --manifest-path programs/evil_program/Cargo.toml
+          - label: week-14-capstone
+            dir: capstone
+            build: cargo build-sbf --manifest-path programs/roofic/Cargo.toml
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Solana CLI (Agave)
+        id: solana-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/solana
+          key: solana-agave-${{ runner.os }}-${{ env.SOLANA_VERSION }}
+
+      - name: Install Solana CLI (Agave)
+        if: steps.solana-cache.outputs.cache-hit != 'true'
+        run: sh -c "$(curl -sSfL "https://release.anza.xyz/v${SOLANA_VERSION}/install")"
+
+      - name: Add Solana CLI to PATH
+        run: |
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/share/solana/install/active_release/bin/solana" --version
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ matrix.dir }}
+          shared-key: ${{ matrix.label }}
+
+      - name: Build SBF & run LiteSVM tests
+        working-directory: ${{ matrix.dir }}
+        run: |
+          ${{ matrix.build }}
+          cargo test
+
+  node-apps:
+    name: TypeScript & Next.js Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Week 9 — DeFi & Pyth Oracle unit tests + typecheck
+        working-directory: week-09-defi
+        run: |
+          npm ci
+          npm test
+          npm run typecheck
+
+      - name: Week 10 — RPC Dashboard unit tests + typecheck + build
+        working-directory: week-10-dashboard
+        run: |
+          npm ci
+          npm test
+          npm run typecheck
+          npm run build
+
+      - name: Week 8 — MVP App typecheck + build
+        working-directory: week-08-mvp/app
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm run build
+
+      - name: Week 14 — Capstone App unit tests + typecheck + build
+        working-directory: capstone/app
+        run: |
+          npm ci
+          npm test
+          npm run typecheck
+          npm run build
+
+  ci-ok:
+    name: All Checks Passed
+    if: always()
+    needs: [rust-and-python, anchor-litesvm, node-apps]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in
+              success) ;;
+              *) exit 1 ;;
+            esac
+          done
