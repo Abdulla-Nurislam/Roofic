@@ -52,6 +52,15 @@ type Position = IdlAccounts<Roofic>["position"];
 type InvestorRecord = IdlAccounts<Roofic>["investor"];
 type Toast = { kind: "ok" | "error"; text: string; sig?: string } | null;
 
+/** `new PublicKey` throws on anything that is not 32 bytes of Base58 */
+const parsePubkey = (value: string): PublicKey | null => {
+  try {
+    return new PublicKey(value.trim());
+  } catch {
+    return null;
+  }
+};
+
 export default function CapstonePage() {
   const { connection } = useConnection();
   const { publicKey } = useWallet();
@@ -1257,7 +1266,16 @@ export default function CapstonePage() {
                   if (!program || !publicKey || !config || !liveReport) return;
                   const id = new BN(Date.now());
                   const propPda = propertyPda(publicKey, id);
-                  const mgrKey = new PublicKey(managerStr.trim() || publicKey.toBase58());
+                  const mgrKey = parsePubkey(managerStr.trim() || publicKey.toBase58());
+                  if (!mgrKey) {
+                    setToast({ kind: "error", text: "Некорректный адрес кошелька управляющей компании" });
+                    return;
+                  }
+                  // The program limits the name to 48 bytes, while `maxLength` counts characters
+                  if (new TextEncoder().encode(effectiveScoreInput.name).length > 48) {
+                    setToast({ kind: "error", text: "Название длиннее 48 байт UTF-8: сократите его" });
+                    return;
+                  }
                   const rawPrice = toRawUnits(priceUsdc, paymentDecimals);
 
                   setCustomReports((prev) => ({
@@ -1445,6 +1463,7 @@ export default function CapstonePage() {
               isAdmin={isAdmin}
               busy={busy}
               onApprove={(w) => approveWalletKyc(w)}
+              onInvalidWallet={() => setToast({ kind: "error", text: "Некорректный Base58-адрес кошелька" })}
               onRevoke={(w) =>
                 run(`revoke-${w.toBase58()}`, `KYC отозван: ${shortKey(w)}`, async () => {
                   if (!program || !publicKey) throw new Error("Подключите кошелёк администратора");
@@ -1529,6 +1548,7 @@ function AdminBento({
   busy,
   onApprove,
   onRevoke,
+  onInvalidWallet,
   onTogglePause,
   onUpdateFees,
 }: {
@@ -1537,12 +1557,19 @@ function AdminBento({
   busy: string | null;
   onApprove: (wallet: PublicKey) => void;
   onRevoke: (wallet: PublicKey) => void;
+  onInvalidWallet: () => void;
   onTogglePause: (paused: boolean) => void;
   onUpdateFees: (rentFeeBps: number, saleFeeBps: number) => void;
 }) {
   const [kycWallet, setKycWallet] = useState("");
   const [rentFee, setRentFee] = useState(config.rentFeeBps);
   const [saleFee, setSaleFee] = useState(config.saleFeeBps);
+
+  const withWallet = (action: (wallet: PublicKey) => void) => {
+    const wallet = parsePubkey(kycWallet);
+    if (wallet) action(wallet);
+    else onInvalidWallet();
+  };
 
   return (
     <div className="bento-grid">
@@ -1551,7 +1578,7 @@ function AdminBento({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            onApprove(new PublicKey(kycWallet.trim()));
+            withWallet(onApprove);
           }}
         >
           <fieldset className="fieldset-reset">
@@ -1584,7 +1611,7 @@ function AdminBento({
                 type="button"
                 className="btn danger sm"
                 disabled={busy !== null || !isAdmin || !kycWallet.trim()}
-                onClick={() => onRevoke(new PublicKey(kycWallet.trim()))}
+                onClick={() => withWallet(onRevoke)}
               >
                 Отозвать KYC
               </button>
