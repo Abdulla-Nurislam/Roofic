@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "private": true,
   "scripts": {
-    "sync-idl": "mkdir -p src/idl && cp ../target/idl/roofic.json src/idl/ && cp ../target/types/roofic.ts src/idl/",
+    "sync-idl": "node scripts/sync-idl.mjs",
     "dev": "next dev -p 3014",
     "build": "next build",
     "start": "next start -p 3014",
