@@ -38,7 +38,9 @@ export const ACC_SCALE = new BN("1000000000000");
 
 /** Клиентский расчёт доступного к выводу дохода (та же формула, что on-chain) */
 export function pendingRent(shares: BN, acc: BN, rewardDebt: BN, unclaimed: BN): BN {
-  return shares.mul(acc).div(ACC_SCALE).sub(rewardDebt).add(unclaimed);
+  const accrued = shares.mul(acc).div(ACC_SCALE);
+  const owed = accrued.gt(rewardDebt) ? accrued.sub(rewardDebt) : new BN(0);
+  return owed.add(unclaimed);
 }
 
 export const LAMPORTS = 1_000_000_000;

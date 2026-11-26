@@ -122,7 +122,6 @@ a:hover {
   display: flex;
   align-items: safe center;
   flex-wrap: wrap;
-  flex-wrap: balance;
   gap: 4px;
 }
 
@@ -218,6 +217,7 @@ h1, h2, h3, h4 {
 .section-block {
   padding-block: 40px;
   border-block-end: 1px solid var(--border);
+  scroll-margin-top: 84px;
 }
 
 .section-block:last-of-type {

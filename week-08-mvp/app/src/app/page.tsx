@@ -480,10 +480,21 @@ function PropertyCard({
           <button
             id={`buy-${key}`}
             className="btn"
-            disabled={busy === `buy-${key}` || shares < 1}
+            disabled={
+              busy === `buy-${key}` ||
+              !Number.isInteger(shares) ||
+              shares < 1 ||
+              shares > total - sold
+            }
             onClick={() => onBuy(shares)}
           >
-            Купить за {sol(a.pricePerShare.mul(new BN(shares || 0)))} SOL
+            Купить за{" "}
+            {sol(
+              a.pricePerShare.mul(
+                new BN(Number.isFinite(shares) ? Math.max(0, Math.floor(shares)) : 0),
+              ),
+            )}{" "}
+            SOL
           </button>
         </div>
       )}
@@ -502,7 +513,7 @@ function PropertyCard({
           <button
             id={`deposit-${key}`}
             className="btn ghost"
-            disabled={busy === `dep-${key}` || sold === 0 || rent <= 0}
+            disabled={busy === `dep-${key}` || sold === 0 || !Number.isFinite(rent) || rent <= 0}
             onClick={() => onDeposit(rent)}
           >
             Внести аренду
