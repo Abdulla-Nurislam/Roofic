@@ -224,6 +224,7 @@ export default function CapstonePage() {
   const verifyWithPython = async () => {
     if (!liveReport) return;
     await run("py-score", "Хеш сверен с Python scoring/engine.py", async () => {
+      setPyVerifiedHash(null);
       const res = await fetch("/api/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -231,6 +232,13 @@ export default function CapstonePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Scoring API failed");
+      // The API silently falls back to the TypeScript engine: that is not a Python verification
+      if (!String(data.engine_source).startsWith("python3")) {
+        throw new Error("Python недоступен на сервере: сверка с engine.py не выполнена");
+      }
+      if (data.valuation_hash_hex !== liveReport.valuation_hash_hex) {
+        throw new Error("Хеш Python engine.py не совпадает с расчётом в браузере");
+      }
       setPyVerifiedHash(data.valuation_hash_hex);
       setCustomReports((prev) => ({
         ...prev,
