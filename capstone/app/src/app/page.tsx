@@ -258,11 +258,16 @@ export default function CapstonePage() {
     refresh();
   }, [refresh]);
 
+  // Prefill the manager with the connected wallet and follow wallet switches,
+  // but never overwrite an address the user typed (or is in the middle of replacing)
+  const autoManager = useRef("");
   useEffect(() => {
-    if (publicKey && !managerStr) {
-      setManagerStr(publicKey.toBase58());
-    }
-  }, [publicKey, managerStr]);
+    if (!publicKey) return;
+    const previous = autoManager.current;
+    const mine = publicKey.toBase58();
+    autoManager.current = mine;
+    setManagerStr((current) => (current === "" || current === previous ? mine : current));
+  }, [publicKey]);
 
   useEffect(() => {
     if (!toast) return;
