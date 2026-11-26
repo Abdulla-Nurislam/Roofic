@@ -26,14 +26,32 @@
 
 ```bash
 npm install
-npm run sync-idl      # синхронизирует IDL и типы из ../target после anchor build
+npm test              # unit-тесты скоринга и ссылок Explorer
 npm run typecheck     # проверка типов TypeScript
 npm run dev           # запуск на http://localhost:3014
 ```
+
+IDL и типы уже лежат в `src/idl`. После изменения программы пересоберите их (`anchor build`) и выполните `npm run sync-idl`.
 
 Для первичного наполнения Devnet демонстрационными объектами (требуется ключ администратора в `~/.config/solana/id.json`):
 
 ```bash
 npm run seed
 ```
+
+Для локального валидатора: `CLUSTER=localnet npm run seed`.
+
+## Настройки окружения
+
+Все переменные необязательны. Пример — в [`.env.example`](.env.example); скопируйте его в `.env.local`.
+
+| Переменная | Назначение | По умолчанию |
+|---|---|---|
+| `NEXT_PUBLIC_RPC_URL` | RPC-узел приложения и ссылок Explorer | публичный Devnet |
+| `ENABLE_DEVNET_FAUCET` | `false` отключает `/api/faucet` | включён только для Devnet / Localnet |
+| `KYC_APPROVER_KEYPAIR_PATH` | Ключ для демо-KYC | `ADMIN_KEYPAIR_PATH` |
+| `FAUCET_KEYPAIR_PATH` | Ключ выпуска Demo USDC | `ADMIN_KEYPAIR_PATH` |
+| `ADMIN_KEYPAIR_PATH` | Общий запасной ключ | `~/.config/solana/id.json` |
+
+Лимиты `/api/faucet`: от 1 до 5 000 USDC за запрос, до 4 запросов в минуту на кошелёк для каждого действия и до 20 на IP.
 
