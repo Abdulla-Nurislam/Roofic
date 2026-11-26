@@ -104,7 +104,7 @@ Program ID: `4qSqEcJ7KhcFsLnURE6dHuQ8KSRkkEX56oFYiRk8zKKf`
 | MVP | Capstone (неделя 14) |
 |-----|----------------------|
 | Оплата в SOL (волатильность) | Оплата и аренда в USDC (стейблкоин) |
-| Доля — запись в `Position` | Доля — Token-2022 токен (передаваемый, с metadata) |
+| Доля — запись в `Position` | Доля — Token-2022 (`NonTransferable`, 0 decimals, без metadata) |
 | Нет KYC | Whitelist / KYC-реестр (требование для RWA) |
 | Нет оценки объекта | ML-прогноз доходности и риск-скор |
 | Нет паузы / админа | Платформенный конфиг, pause, комиссия платформы |
