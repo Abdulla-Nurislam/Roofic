@@ -6,6 +6,7 @@ from unit_economics import (
     MAX_FEE_BPS,
     SCENARIOS,
     Assumptions,
+    RentAccumulatorPool,
     annual_breakdown,
     break_even_properties,
     distribute,
@@ -163,6 +164,61 @@ class DistributeTests(unittest.TestCase):
             distribute(-1, {"a": 1})
         with self.assertRaises(ValueError):
             distribute(100, {"a": -1, "b": 2})
+
+
+class AccumulatorPoolTests(unittest.TestCase):
+    def test_late_buyer_gets_zero_from_prior_rent(self):
+        pool = RentAccumulatorPool(total_shares=1_000, rent_fee_bps=100)
+        pool.buy_shares("early", 100)
+        pool.deposit_rent(10_000_000)  # 10 USDC
+        pool.buy_shares("late", 100)
+        self.assertEqual(pool.pending_rent("late"), 0)
+        self.assertEqual(pool.claim_rent("early"), 9_900_000)
+
+    def test_top_up_purchase_preserves_unclaimed_rent(self):
+        pool = RentAccumulatorPool(total_shares=1_000, rent_fee_bps=100)
+        pool.buy_shares("alice", 10)
+        pool.buy_shares("bob", 30)
+        pool.deposit_rent(100_000_000)  # net 99_000_000 -> alice 24.75 USDC, bob 74.25 USDC
+        before = pool.pending_rent("alice")
+        self.assertEqual(before, 24_750_000)
+
+        # Alice buys 20 more shares before claiming; prior accrued rent must survive in `unclaimed`
+        pool.buy_shares("alice", 20)
+        self.assertEqual(pool.pending_rent("alice"), before)
+
+        pool.deposit_rent(60_000_000)  # net 59_400_000 split 30:30 -> 29_700_000 each
+        self.assertEqual(pool.claim_rent("alice"), 24_750_000 + 29_700_000)
+        self.assertEqual(pool.claim_rent("bob"), 74_250_000 + 29_700_000)
+        self.assertEqual(pool.vault_balance, 0)
+
+    def test_multi_epoch_money_conservation_and_solvency(self):
+        pool = RentAccumulatorPool(total_shares=1_000, rent_fee_bps=100)
+        pool.buy_shares("i1", 7)
+        pool.buy_shares("i2", 13)
+        pool.buy_shares("i3", 23)
+        gross_total = 0
+        for gross in (33_333_333, 77_777_777, 12_345_678):
+            gross_total += gross
+            pool.deposit_rent(gross)
+        pool.buy_shares("i4", 19)
+        gross_total += 55_555_555
+        pool.deposit_rent(55_555_555)
+
+        claimed = sum(pool.claim_rent(inv) for inv in ("i1", "i2", "i3", "i4"))
+        self.assertGreaterEqual(pool.vault_balance, 0)
+        self.assertLess(pool.vault_balance, pool.shares_sold)
+        self.assertEqual(claimed + pool.treasury_fees + pool.vault_balance, gross_total)
+
+    def test_accumulator_rejects_invalid_operations(self):
+        pool = RentAccumulatorPool(total_shares=10, rent_fee_bps=100)
+        with self.assertRaises(ValueError):
+            pool.deposit_rent(1_000)  # no shareholders yet
+        pool.buy_shares("alice", 10)
+        with self.assertRaises(ValueError):
+            pool.buy_shares("bob", 1)  # oversell
+        with self.assertRaises(ValueError):
+            pool.claim_rent("alice")  # nothing accrued yet
 
 
 if __name__ == "__main__":
