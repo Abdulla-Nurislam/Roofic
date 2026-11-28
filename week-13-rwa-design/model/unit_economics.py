@@ -16,6 +16,7 @@ import math
 from dataclasses import dataclass, replace
 
 BPS = 10_000
+MAX_FEE_BPS = 2_000  # 20% hard ceiling enforced on-chain in PlatformConfig
 
 
 @dataclass(frozen=True)
@@ -30,15 +31,31 @@ class Assumptions:
     platform_fixed_cost_month: float = 3_000.0  # USD: infra, KYC provider, legal retainer
 
     def validate(self) -> None:
+        for name in (
+            "price",
+            "gross_rent_yield",
+            "vacancy",
+            "opex_ratio",
+            "manager_fee",
+            "platform_rent_fee_bps",
+            "platform_sale_fee_bps",
+            "platform_fixed_cost_month",
+        ):
+            v = getattr(self, name)
+            if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v):
+                raise ValueError(f"{name} must be a finite number, got {v!r}")
         for name in ("gross_rent_yield", "vacancy", "opex_ratio", "manager_fee"):
             v = getattr(self, name)
             if not 0 <= v < 1:
                 raise ValueError(f"{name} must be in [0, 1), got {v}")
         if self.price <= 0:
             raise ValueError("price must be positive")
+        if self.platform_fixed_cost_month < 0:
+            raise ValueError("platform_fixed_cost_month must be non-negative")
         for name in ("platform_rent_fee_bps", "platform_sale_fee_bps"):
-            if not 0 <= getattr(self, name) <= BPS:
-                raise ValueError(f"{name} must be in [0, {BPS}]")
+            v = getattr(self, name)
+            if not isinstance(v, int) or not 0 <= v <= MAX_FEE_BPS:
+                raise ValueError(f"{name} must be an integer in [0, {MAX_FEE_BPS}], got {v}")
         if self.opex_ratio + self.manager_fee >= 1:
             raise ValueError("opex_ratio + manager_fee must be below 100% of collected rent")
 
