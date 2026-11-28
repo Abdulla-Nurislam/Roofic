@@ -13,10 +13,11 @@ Two things are modelled:
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 BPS = 10_000
 MAX_FEE_BPS = 2_000  # 20% hard ceiling enforced on-chain in PlatformConfig
+ACC_SCALE = 1_000_000_000_000  # 1e12 fixed-point precision matching Property.acc_rent_per_share
 
 
 @dataclass(frozen=True)
@@ -127,6 +128,80 @@ def distribute(total_units: int, holdings: dict[str, int]) -> tuple[dict[str, in
         raise ValueError("negative holding")
     payouts = {h: total_units * s // total_shares for h, s in holdings.items()}
     return payouts, total_units - sum(payouts.values())
+
+
+@dataclass
+class InvestorPosition:
+    shares: int = 0
+    reward_debt: int = 0
+    unclaimed: int = 0
+    total_claimed: int = 0
+
+
+@dataclass
+class RentAccumulatorPool:
+    """Exact integer reference model of Roofic's O(1) on-chain rent accumulator."""
+
+    total_shares: int
+    rent_fee_bps: int = 100
+    shares_sold: int = 0
+    acc_rent_per_share: int = 0
+    vault_balance: int = 0
+    treasury_fees: int = 0
+    positions: dict[str, InvestorPosition] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.total_shares <= 0:
+            raise ValueError("total_shares must be positive")
+        if not 0 <= self.rent_fee_bps <= MAX_FEE_BPS:
+            raise ValueError(f"rent_fee_bps must be in [0, {MAX_FEE_BPS}]")
+
+    def _owed(self, pos: InvestorPosition) -> int:
+        accrued = (pos.shares * self.acc_rent_per_share) // ACC_SCALE
+        return accrued - pos.reward_debt
+
+    def buy_shares(self, investor: str, shares: int) -> None:
+        if shares <= 0:
+            raise ValueError("shares must be positive")
+        if self.shares_sold + shares > self.total_shares:
+            raise ValueError("not enough shares left")
+        pos = self.positions.setdefault(investor, InvestorPosition())
+        if pos.shares > 0:
+            pos.unclaimed += self._owed(pos)
+        pos.shares += shares
+        self.shares_sold += shares
+        pos.reward_debt = (pos.shares * self.acc_rent_per_share) // ACC_SCALE
+
+    def deposit_rent(self, gross_units: int) -> tuple[int, int]:
+        if gross_units <= 0:
+            raise ValueError("gross_units must be positive")
+        if self.shares_sold == 0:
+            raise ValueError("no shareholders")
+        fee = (gross_units * self.rent_fee_bps) // BPS
+        net = gross_units - fee
+        self.treasury_fees += fee
+        self.vault_balance += net
+        self.acc_rent_per_share += (net * ACC_SCALE) // self.shares_sold
+        return fee, net
+
+    def pending_rent(self, investor: str) -> int:
+        pos = self.positions.get(investor)
+        if pos is None:
+            return 0
+        return pos.unclaimed + self._owed(pos)
+
+    def claim_rent(self, investor: str) -> int:
+        pos = self.positions.get(investor)
+        if pos is None:
+            raise ValueError("unknown investor")
+        total = pos.unclaimed + self._owed(pos)
+        if total <= 0:
+            raise ValueError("nothing to claim")
+        pos.unclaimed = 0
+        pos.reward_debt = (pos.shares * self.acc_rent_per_share) // ACC_SCALE
+        pos.total_claimed += total
+        self.vault_balance -= total
+        return total
 
 
 SCENARIOS = {
