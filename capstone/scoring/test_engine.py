@@ -1,7 +1,7 @@
 import unittest
 from dataclasses import replace
 
-from engine import PropertyInput, evaluate_property
+from engine import PRESET_CATALOG, PropertyInput, evaluate_property
 
 
 class ScoringEngineTests(unittest.TestCase):
@@ -176,6 +176,13 @@ class ScoringEngineTests(unittest.TestCase):
         rep = evaluate_property(cyr)
         self.assertEqual(rep.risk_score, 73)
         self.assertEqual(rep.valuation_hash_hex[:16], "46e7f31ddc9d8c3b")
+
+    def test_preset_catalog_hashes_match_typescript_catalog(self) -> None:
+        self.assertEqual(len(PRESET_CATALOG), 3)
+        prefixes = [evaluate_property(item.input).valuation_hash_hex[:16] for item in PRESET_CATALOG]
+        self.assertEqual(prefixes, ["65801abf0776d0b4", "5ab5ab049c3c6425", "72cac0027b03ed2a"])
+        for item in PRESET_CATALOG:
+            self.assertEqual(item.total_shares * item.price_per_share_usdc, item.input.price_usd)
 
 
 if __name__ == "__main__":
