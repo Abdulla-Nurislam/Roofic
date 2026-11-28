@@ -4,14 +4,17 @@ from dataclasses import replace
 
 from unit_economics import (
     MAX_FEE_BPS,
+    PROPERTY_PRESETS,
     SCENARIOS,
     Assumptions,
+    PropertyPreset,
     RentAccumulatorPool,
     annual_breakdown,
     break_even_properties,
     distribute,
     hybrid_break_even_properties,
     listing_break_even_properties,
+    portfolio_summary,
 )
 
 
@@ -219,6 +222,40 @@ class AccumulatorPoolTests(unittest.TestCase):
             pool.buy_shares("bob", 1)  # oversell
         with self.assertRaises(ValueError):
             pool.claim_rent("alice")  # nothing accrued yet
+
+
+class PresetCatalogTests(unittest.TestCase):
+    def test_flagship_presets_share_capitalization_and_yields(self):
+        self.assertEqual(len(PROPERTY_PRESETS), 3)
+        expected_yields = [0.0673, 0.0809, 0.0595]
+        for preset, expected in zip(PROPERTY_PRESETS, expected_yields):
+            preset.validate()
+            self.assertEqual(preset.total_shares * preset.price_per_share_usd, preset.assumptions.price)
+            b = annual_breakdown(preset.assumptions)
+            self.assertAlmostEqual(b["investor_net_yield"], expected, places=4)
+
+    def test_portfolio_summary_matches_preset_waterfalls(self):
+        pf = portfolio_summary(PROPERTY_PRESETS)
+        self.assertAlmostEqual(pf["total_aum"], 430_000.0)
+        self.assertEqual(pf["total_shares"], 4_300.0)
+        self.assertAlmostEqual(pf["platform_sale_fee"], 6_450.0)
+        self.assertAlmostEqual(pf["platform_rent_fee"], 320.2925)
+        self.assertAlmostEqual(pf["year1_platform_revenue"], 6_770.2925)
+        self.assertAlmostEqual(pf["investor_income"] + pf["platform_rent_fee"], pf["net_operating_income"])
+
+    def test_invalid_preset_capitalization_rejected(self):
+        bad = PropertyPreset(
+            property_id=99,
+            name="Mismatch",
+            city="Almaty",
+            total_shares=500,
+            price_per_share_usd=100.0,
+            assumptions=Assumptions(price=100_000.0),
+        )
+        with self.assertRaises(ValueError):
+            bad.validate()
+        with self.assertRaises(ValueError):
+            portfolio_summary(())
 
 
 if __name__ == "__main__":
