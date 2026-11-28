@@ -53,6 +53,7 @@ flowchart TB
 5. `buy_shares(shares)` — проверяет KYC-запись инвестора, увеличивает монотонный счётчик `property.shares_sold`, переводит `cost - fee` владельцу и `fee` в казну, начисляет прошлый доход в `unclaimed`, обновляет `reward_debt` и выпускает share-токены.
 6. `deposit_rent(amount)` — вызывается `manager`; удерживает `rent_fee_bps` в казну, остаток кладёт в `vault` и увеличивает `acc_rent_per_share` в расчёте на `property.shares_sold`.
 7. `claim_rent()` — выплачивает инвестору накопленный доход из `vault` по подписи PDA объекта (работает даже при `paused = true` и после отзыва KYC, чтобы средства инвестора никогда не блокировались).
+8. `initialize_reserve_vault()` / `deposit_reserve(amount)` / `withdraw_reserve(shares_amount)` — опциональный контур резервного хранилища (`ReserveVault` PDA + математика долей в [`programs/roofic/src/instructions/vault_ops.rs`](programs/roofic/src/instructions/vault_ops.rs)).
 
 ### Почему `NonTransferable` + монотонный `property.shares_sold`
 Учёт арендного дохода ведётся через `reward_debt` в аккаунте `Position`.
@@ -64,11 +65,11 @@ flowchart TB
 Расположен в [`scoring/engine.py`](scoring/engine.py).
 - Считает чистую доходность инвестора в трёх сценариях (`bear`, `base`, `bull`) с учётом вакантности, операционных расходов, комиссии управляющего и комиссии платформы.
 - Раскладывает риск-скор (`0..100`, грейды `A`–`D`) на 4 прозрачных фактора: `vacancy`, `operating_costs`, `building_age`, `downside_yield`.
-- Формирует детерминированный SHA-256 хэш отчёта (`valuation_hash`, канонический UTF-8 JSON с `ensure_ascii=False`), полностью совпадающий между Python и TypeScript.
+- Формирует детерминированный SHA-256 хэш отчёта (`valuation_hash`, канонический UTF-8 JSON с `ensure_ascii=False`), полностью совпадающий между Python и TypeScript, и экспортирует эталонный каталог `PRESET_CATALOG` из трёх объектов Казахстана (см. [`../week-13-rwa-design/PRESETS.md`](../week-13-rwa-design/PRESETS.md)).
 
 ```bash
 cd scoring
-python3 -m unittest -v      # 7 тестов (включая кириллический UTF-8 хэш-паритет с TS)
+python3 -m unittest -v      # 10 тестов (включая PRESET_CATALOG и кириллический UTF-8 хэш-паритет с TS)
 python3 engine.py
 ```
 
