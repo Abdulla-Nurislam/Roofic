@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -9,6 +9,10 @@ const mono = JetBrains_Mono({ subsets: ["latin", "cyrillic"], variable: "--font-
 export const metadata: Metadata = {
   title: "Roofic MVP — SOL Rental Real Estate Protocol",
   description: "Fractional property shares and pro-rata SOL rent distribution with Pyth SOL/USD oracle.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#232728",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

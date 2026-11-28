@@ -106,10 +106,16 @@ export default function Home() {
         <div className="container header">
           <div className="brand-group">
             <div className="logo">
-              <div className="logo-mark">R</div>
+              <div className="logo-mark">
+                <svg viewBox="120 260 784 500" width="22" height="22" aria-hidden="true">
+                  <polygon points="188,685 511,338 584,416 333,685" fill="#E8E8E6" />
+                  <polygon points="604,437 677,515 604,593 531,515" fill="#E8E8E6" />
+                  <polygon points="697,537 834,685 692,685 624,615" fill="#9A462C" />
+                </svg>
+              </div>
               <span>ROOFIC</span>
             </div>
-            <span className="badge emerald">MVP · SOL + PYTH</span>
+            <span className="badge brand">MVP · SOL + PYTH</span>
           </div>
 
           <nav className="nav-links" aria-label="Навигация MVP">
@@ -157,7 +163,7 @@ export default function Home() {
             <div className="bento-cell span-5 accent-cell">
               <div className="metric-top">
                 <span className="metric-label">Привлечено в пулы</span>
-                <span className="badge emerald">SOL</span>
+                <span className="badge brand">SOL</span>
               </div>
               <div className="metric-value">{sol(stats.raised)} SOL</div>
               {usd(stats.raised) && <div className="metric-sub">{usd(stats.raised)} (Pyth SOL/USD)</div>}
