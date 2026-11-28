@@ -31,6 +31,9 @@ use anchor_spl::token_2022::{initialize_mint2, mint_to, InitializeMint2, MintTo,
 use anchor_spl::token_2022_extensions::{non_transferable_mint_initialize, NonTransferableMintInitialize};
 use anchor_spl::token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked};
 
+pub mod instructions;
+use instructions::*;
+
 declare_id!("EvLmbfYUs5m5YHWm4QWCeQfy63df4BBiaBiZw8Rf12mo");
 
 /// Accumulator precision: rent per share is stored with 1e-12 resolution
@@ -104,6 +107,19 @@ pub mod roofic {
 
     pub fn revoke_investor(_ctx: Context<RevokeInvestor>) -> Result<()> {
         Ok(()) // the `close` constraint removes the record and refunds rent to the admin
+    }
+
+    // --------------------------------------------------------- reserve vault (template)
+    pub fn initialize_reserve_vault(ctx: Context<InitializeReserveVault>) -> Result<()> {
+        instructions::initialize_reserve_vault_handler(ctx)
+    }
+
+    pub fn deposit_reserve(ctx: Context<DepositReserve>, amount: u64) -> Result<u64> {
+        instructions::deposit_reserve_handler(ctx, amount)
+    }
+
+    pub fn withdraw_reserve(ctx: Context<WithdrawReserve>, shares_amount: u64) -> Result<u64> {
+        instructions::withdraw_reserve_handler(ctx, shares_amount)
     }
 
     // ---------------------------------------------------------------- listing
@@ -784,5 +800,7 @@ pub enum RooficError {
     WrongVault,
     #[msg("Payment mint must not have TransferFee, TransferHook, or PermanentDelegate extensions")]
     UnsupportedPaymentMint,
+    #[msg("Calculated shares are too small")]
+    SharesTooSmall,
 }
 
