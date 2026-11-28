@@ -23,16 +23,16 @@
 
 | Проверка | Защищает от |
 |----------|-------------|
-| `owner == Pyth Receiver` | Подмены оракула своим аккаунтом |
+| `owner == Pyth Receiver` (`rec5EKMG…`) | Подмены оракула своим аккаунтом |
 | `verification_level == Full` | Неподтверждённой Wormhole-подписи |
-| `age < N сек` | Устаревшей цены (оракул «залип») |
+| `age < 600 сек` | Устаревшей цены (оракул «залип») |
 | `conf / price < 2 %` | Рынок нестабилен, цена ненадёжна |
-| использовать `price − conf` для залога | Завышенной оценки активов |
+| использовать `price − conf` для залога и котировок | Завышенной оценки активов |
 
 ### Jupiter — агрегатор
-1. `GET /swap/v1/quote` возвращает **маршрут** (какой % через какой пул), ожидаемый выход, `otherAmountThreshold` (минимум с учётом slippage), price impact.
+1. `GET https://lite-api.jup.ag/swap/v1/quote` возвращает **маршрут** (какой % через какой пул), ожидаемый выход, `otherAmountThreshold` (минимум с учётом slippage), price impact.
 2. `POST /swap/v1/swap` собирает **v0-транзакцию** с address lookup tables: ComputeBudget → создание ATA → wrap SOL → вызов Jupiter → unwrap.
-3. Пользователь подписывает и отправляет транзакцию. **Slippage** защищает от sandwich-атак: если выход ниже порога, вся транзакция откатывается.
+3. Пользователь подписывает и отправляет транзакцию. **Slippage** (`50 bps` = 0.5% в Capstone UI) защищает от sandwich-атак: если выход ниже порога, вся транзакция откатывается. При недоступности API или rate-limit (`HTTP 429`) клиент [`capstone/app/src/lib/defi.ts`](../capstone/app/src/lib/defi.ts) безопасно переключается на индикативную котировку из здорового фида Pyth (`conservativePrice = price − conf`).
 
 Jupiter работает только в mainnet, поэтому в курсе мы запрашиваем реальную котировку и разбираем транзакцию, но не отправляем её.
 
@@ -43,10 +43,10 @@ Jupiter работает только в mainnet, поэтому в курсе �
 
 | Функция | Протокол | Где в коде | Статус |
 |---------|----------|-----------|:------:|
-| Цена доли и аренды в USD | Pyth | `week-08-mvp/app/src/lib/pyth.ts` | ✅ работает в UI |
-| Котировка SOL→USDC | Jupiter | `src/jupiter.ts` | ✅ live (без отправки) |
-| Размещение временно свободной аренды | Kamino | `src/yields.ts` (аналитика) | 📐 дизайн для Capstone |
-| Расчёты в USDC | SPL Token | Capstone | 📐 |
+| Ончейн-цены `SOL/USD` и `USDC/USD` (`PriceUpdateV2`) | Pyth | `week-08-mvp/app/src/lib/pyth.ts`, `capstone/app/src/lib/defi.ts` | ✅ работает в MVP и Capstone UI |
+| Живая котировка маршрута `1 SOL → USDC` + fallback | Jupiter v6 | `week-09-defi/src/jupiter.ts`, `capstone/app/src/lib/defi.ts` | ✅ live (без отправки swap) |
+| Бенчмарк доходности резерва казны в USDC | Kamino | `week-09-defi/src/yields.ts`, `capstone/app/src/lib/defi.ts` | ✅ телеметрия + дизайн резерва |
+| Стейблкоин-расчёты покупки долей и аренды | SPL Token / Token-2022 | `capstone/programs/roofic/src/lib.rs` (`TokenInterface` + `transfer_checked`) | ✅ реализовано в Capstone |
 
 ## Выводы для архитектуры
 - **Аренда должна выплачиваться в стейблкоине.** SOL за период владения сильно меняется, а арендный доход по определению стабилен.
