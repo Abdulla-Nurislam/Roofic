@@ -81,7 +81,9 @@ def annual_breakdown(a: Assumptions) -> dict[str, float]:
         "platform_rent_fee": platform_fee,
         "investor_income": investor_income,
         "investor_net_yield": investor_income / a.price,
+        "monthly_noi": net_operating / 12.0,
         "platform_sale_fee": a.price * a.platform_sale_fee_bps / BPS,
+        "year1_platform_revenue": platform_fee + (a.price * a.platform_sale_fee_bps / BPS),
     }
 
 
@@ -91,6 +93,23 @@ def break_even_properties(a: Assumptions) -> int:
     if fee <= 0:
         raise ValueError("platform earns no recurring fee under these assumptions")
     return math.ceil(a.platform_fixed_cost_month * 12 / fee)
+
+
+def listing_break_even_properties(a: Assumptions) -> int:
+    """New listings per year needed for primary sale fees alone to cover annual fixed costs."""
+    sale_fee = annual_breakdown(a)["platform_sale_fee"]
+    if sale_fee <= 0:
+        raise ValueError("platform earns no primary sale fee under these assumptions")
+    return math.ceil(a.platform_fixed_cost_month * 12 / sale_fee)
+
+
+def hybrid_break_even_properties(a: Assumptions) -> int:
+    """Properties needed in year 1 when both primary sale fee and annual rent fee apply."""
+    b = annual_breakdown(a)
+    year1_fee = b["platform_sale_fee"] + b["platform_rent_fee"]
+    if year1_fee <= 0:
+        raise ValueError("platform earns neither sale nor rent fee under these assumptions")
+    return math.ceil(a.platform_fixed_cost_month * 12 / year1_fee)
 
 
 def distribute(total_units: int, holdings: dict[str, int]) -> tuple[dict[str, int], int]:
@@ -133,6 +152,11 @@ def main() -> None:
     for k in ("potential_rent", "vacancy_loss", "opex", "manager_fee", "platform_rent_fee", "investor_income"):
         print(f"  {k:<18}{b[k]:>10,.0f}")
     print(f"  one-off sale fee  {b['platform_sale_fee']:>10,.0f}  (paid by the property owner at listing)")
+    print(
+        f"  break-even: {break_even_properties(base)}p (rent fee only) | "
+        f"{listing_break_even_properties(base)}p/yr (sale fee only) | "
+        f"{hybrid_break_even_properties(base)}p (year-1 hybrid)"
+    )
 
 
 if __name__ == "__main__":
