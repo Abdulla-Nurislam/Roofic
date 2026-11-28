@@ -204,6 +204,104 @@ class RentAccumulatorPool:
         return total
 
 
+@dataclass(frozen=True)
+class PropertyPreset:
+    property_id: int
+    name: str
+    city: str
+    total_shares: int
+    price_per_share_usd: float
+    assumptions: Assumptions
+
+    def validate(self) -> None:
+        if self.total_shares <= 0 or self.price_per_share_usd <= 0:
+            raise ValueError("total_shares and price_per_share_usd must be positive")
+        if not math.isclose(self.total_shares * self.price_per_share_usd, self.assumptions.price, rel_tol=1e-9):
+            raise ValueError("total_shares * price_per_share_usd must equal assumptions.price")
+        self.assumptions.validate()
+
+
+PROPERTY_PRESETS: tuple[PropertyPreset, ...] = (
+    PropertyPreset(
+        property_id=1,
+        name="Almaty Loft #1",
+        city="Almaty",
+        total_shares=1_000,
+        price_per_share_usd=100.0,
+        assumptions=Assumptions(
+            price=100_000.0,
+            gross_rent_yield=0.095,
+            vacancy=0.07,
+            opex_ratio=0.18,
+            manager_fee=0.05,
+        ),
+    ),
+    PropertyPreset(
+        property_id=2,
+        name="Astana Business Center",
+        city="Astana",
+        total_shares=2_500,
+        price_per_share_usd=100.0,
+        assumptions=Assumptions(
+            price=250_000.0,
+            gross_rent_yield=0.11,
+            vacancy=0.06,
+            opex_ratio=0.16,
+            manager_fee=0.05,
+        ),
+    ),
+    PropertyPreset(
+        property_id=3,
+        name="Shymkent Family House",
+        city="Shymkent",
+        total_shares=800,
+        price_per_share_usd=100.0,
+        assumptions=Assumptions(
+            price=80_000.0,
+            gross_rent_yield=0.088,
+            vacancy=0.09,
+            opex_ratio=0.20,
+            manager_fee=0.05,
+        ),
+    ),
+)
+
+
+def portfolio_summary(presets: tuple[PropertyPreset, ...] = PROPERTY_PRESETS) -> dict[str, float]:
+    """Aggregates waterfall metrics across a catalog of RWA property presets."""
+    if not presets:
+        raise ValueError("presets must not be empty")
+    total_aum = 0.0
+    total_shares = 0
+    potential_rent = 0.0
+    noi = 0.0
+    rent_fee = 0.0
+    sale_fee = 0.0
+    investor_income = 0.0
+    for preset in presets:
+        preset.validate()
+        b = annual_breakdown(preset.assumptions)
+        total_aum += preset.assumptions.price
+        total_shares += preset.total_shares
+        potential_rent += b["potential_rent"]
+        noi += b["net_operating_income"]
+        rent_fee += b["platform_rent_fee"]
+        sale_fee += b["platform_sale_fee"]
+        investor_income += b["investor_income"]
+    return {
+        "total_aum": total_aum,
+        "total_shares": float(total_shares),
+        "potential_rent": potential_rent,
+        "net_operating_income": noi,
+        "platform_rent_fee": rent_fee,
+        "platform_sale_fee": sale_fee,
+        "year1_platform_revenue": sale_fee + rent_fee,
+        "investor_income": investor_income,
+        "blended_gross_yield": potential_rent / total_aum,
+        "blended_net_yield": investor_income / total_aum,
+    }
+
+
 SCENARIOS = {
     "bear": dict(gross_rent_yield=0.07, vacancy=0.15, opex_ratio=0.25),
     "base": dict(),
@@ -231,6 +329,12 @@ def main() -> None:
         f"  break-even: {break_even_properties(base)}p (rent fee only) | "
         f"{listing_break_even_properties(base)}p/yr (sale fee only) | "
         f"{hybrid_break_even_properties(base)}p (year-1 hybrid)"
+    )
+    pf = portfolio_summary()
+    print(
+        f"\nFlagship catalog ({len(PROPERTY_PRESETS)} properties, ${pf['total_aum']:,.0f} AUM, "
+        f"{int(pf['total_shares']):,d} shares): blended net yield {pf['blended_net_yield']:.2%}, "
+        f"year-1 platform revenue ${pf['year1_platform_revenue']:,.2f}"
     )
 
 
