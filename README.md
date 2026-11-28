@@ -104,8 +104,8 @@ flowchart LR
 | 10 | RPC, API и blockchain data | РО3 | [week-10-dashboard](week-10-dashboard/) | ✅ (7 тестов, Next.js) |
 | 11 | CPI и composable applications | РО3 | [week-11-cpi](week-11-cpi/) | ✅ (11 тестов, 2 программы) |
 | 12 | Security & Exploit Lab | РО4 | [week-12-security-lab](week-12-security-lab/) | ✅ (11 эксплойт/фикс-тестов) |
-| 13 | RWA, Stablecoins и платежи | РО4 | [week-13-rwa-design](week-13-rwa-design/) | ✅ (12 тестов финмодели) |
-| 14 | Capstone Build Week | РО5 | [capstone](capstone/) | ✅ (34 Rust + 7 Python тестов, Next.js, Devnet) |
+| 13 | RWA, Stablecoins и платежи | РО4 | [week-13-rwa-design](week-13-rwa-design/) | ✅ (22 теста финмодели) |
+| 14 | Capstone Build Week | РО5 | [capstone](capstone/) | ✅ (33 Rust + 10 Python тестов, Next.js, Devnet) |
 | 15 | РК2 · Solana Demo Day (5–7 мин питч и live demo) | РО5 | [docs/pitch-and-demo.md](docs/pitch-and-demo.md) | ✅ |
 | 16 | Защита проекта (Q&A, архитектура и безопасность) | РО1–5 | [docs/pitch-and-demo.md](docs/pitch-and-demo.md) | ✅ |
 
