@@ -9,6 +9,8 @@ from unit_economics import (
     annual_breakdown,
     break_even_properties,
     distribute,
+    hybrid_break_even_properties,
+    listing_break_even_properties,
 )
 
 
@@ -63,6 +65,30 @@ class WaterfallTests(unittest.TestCase):
     def test_zero_platform_fee_has_no_break_even(self):
         with self.assertRaises(ValueError):
             break_even_properties(replace(Assumptions(), platform_rent_fee_bps=0))
+
+    def test_listing_and_hybrid_break_even_properties(self):
+        a = Assumptions()
+        annual_fixed = a.platform_fixed_cost_month * 12  # 36,000 USD
+        b = annual_breakdown(a)
+        self.assertAlmostEqual(b["monthly_noi"], 517.50)
+        self.assertAlmostEqual(b["year1_platform_revenue"], 1562.10)
+
+        n_list = listing_break_even_properties(a)
+        self.assertEqual(n_list, 24)
+        self.assertGreaterEqual(n_list * b["platform_sale_fee"], annual_fixed)
+        self.assertLess((n_list - 1) * b["platform_sale_fee"], annual_fixed)
+
+        n_hyb = hybrid_break_even_properties(a)
+        self.assertEqual(n_hyb, 24)
+        self.assertGreaterEqual(n_hyb * b["year1_platform_revenue"], annual_fixed)
+        self.assertLess((n_hyb - 1) * b["year1_platform_revenue"], annual_fixed)
+        self.assertLessEqual(n_hyb, n_list)
+        self.assertLessEqual(n_list, break_even_properties(a))
+
+        with self.assertRaises(ValueError):
+            listing_break_even_properties(replace(a, platform_sale_fee_bps=0))
+        with self.assertRaises(ValueError):
+            hybrid_break_even_properties(replace(a, platform_rent_fee_bps=0, platform_sale_fee_bps=0))
 
     def test_protocol_fee_cap_and_non_finite_assumptions_rejected(self):
         # Boundary: 2000 bps (20%) is allowed on-chain; 2001 bps must fail
