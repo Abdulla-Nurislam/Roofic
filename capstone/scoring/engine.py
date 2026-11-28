@@ -171,23 +171,75 @@ def evaluate_property(inp: PropertyInput) -> ScoreReport:
     )
 
 
+@dataclass(frozen=True)
+class PresetCatalogItem:
+    input: PropertyInput
+    total_shares: int
+    price_per_share_usdc: int
+
+
+PRESET_CATALOG: tuple[PresetCatalogItem, ...] = (
+    PresetCatalogItem(
+        input=PropertyInput(
+            property_id=1,
+            name="Almaty Loft #1",
+            city="Almaty",
+            price_usd=100_000.0,
+            gross_yield=0.095,
+            vacancy_rate=0.07,
+            opex_ratio=0.18,
+            manager_fee_ratio=0.05,
+            platform_rent_fee_bps=100,
+            platform_sale_fee_bps=150,
+            building_age_years=4,
+        ),
+        total_shares=1_000,
+        price_per_share_usdc=100,
+    ),
+    PresetCatalogItem(
+        input=PropertyInput(
+            property_id=2,
+            name="Astana Business Center",
+            city="Astana",
+            price_usd=250_000.0,
+            gross_yield=0.11,
+            vacancy_rate=0.06,
+            opex_ratio=0.16,
+            manager_fee_ratio=0.05,
+            platform_rent_fee_bps=100,
+            platform_sale_fee_bps=150,
+            building_age_years=3,
+        ),
+        total_shares=2_500,
+        price_per_share_usdc=100,
+    ),
+    PresetCatalogItem(
+        input=PropertyInput(
+            property_id=3,
+            name="Shymkent Family House",
+            city="Shymkent",
+            price_usd=80_000.0,
+            gross_yield=0.088,
+            vacancy_rate=0.09,
+            opex_ratio=0.20,
+            manager_fee_ratio=0.05,
+            platform_rent_fee_bps=100,
+            platform_sale_fee_bps=150,
+            building_age_years=8,
+        ),
+        total_shares=800,
+        price_per_share_usdc=100,
+    ),
+)
+
+
 if __name__ == "__main__":
-    sample = PropertyInput(
-        property_id=1,
-        name="Almaty Loft #1",
-        city="Almaty",
-        price_usd=100_000.0,
-        gross_yield=0.095,
-        vacancy_rate=0.07,
-        opex_ratio=0.18,
-        manager_fee_ratio=0.05,
-        building_age_years=4,
-    )
-    rep = evaluate_property(sample)
-    print(f"Property: {rep.name} (grade {rep.risk_grade}, risk {rep.risk_score}/100)")
-    print(
-        f"Net yield — bear: {rep.net_yield_bear:.2%} | base: {rep.net_yield_base:.2%} | bull: {rep.net_yield_bull:.2%}"
-    )
-    print(f"Factors:  {rep.factors}")
-    print(f"SHA-256 valuation_hash: 0x{rep.valuation_hash_hex}")
+    for preset in PRESET_CATALOG:
+        rep = evaluate_property(preset.input)
+        print(f"Property: {rep.name} (grade {rep.risk_grade}, risk {rep.risk_score}/100)")
+        print(
+            f"Net yield — bear: {rep.net_yield_bear:.2%} | base: {rep.net_yield_base:.2%} | bull: {rep.net_yield_bull:.2%}"
+        )
+        print(f"Factors:  {rep.factors}")
+        print(f"SHA-256 valuation_hash: 0x{rep.valuation_hash_hex}\n")
 
