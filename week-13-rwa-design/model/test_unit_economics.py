@@ -77,6 +77,18 @@ class DistributeTests(unittest.TestCase):
         self.assertEqual(dust, 1)
         self.assertEqual(sum(payouts.values()) + dust, 100)
 
+    def test_distribute_100_usdc_across_3_and_7_investors(self):
+        total = 100_000_000  # 100 USDC (6 decimals)
+        for holdings in (
+            {"inv1": 1, "inv2": 1, "inv3": 1},
+            {f"inv{i}": 1 for i in range(7)},
+            {"a": 3, "b": 7, "c": 11, "d": 13, "e": 17, "f": 19, "g": 23},
+        ):
+            with self.subTest(holders=len(holdings)):
+                payouts, dust = distribute(total, holdings)
+                self.assertEqual(sum(payouts.values()) + dust, total)
+                self.assertTrue(0 <= dust < len(holdings))
+
     def test_conservation_and_dust_bound_over_many_cases(self):
         # deterministic pseudo-random sweep, no external deps
         x = 12345

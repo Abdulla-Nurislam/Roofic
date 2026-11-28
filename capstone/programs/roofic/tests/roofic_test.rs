@@ -437,7 +437,14 @@ fn only_the_admin_can_pause_and_fees_are_capped() {
         accounts::AdminOnly { config: w.config, admin: admin.pubkey() }.to_account_metas(None),
         instruction::SetFees { rent_fee_bps: 2_001, sale_fee_bps: 0 }.data(),
     );
-    let err = w.send(ix, &[&admin]).expect_err("fee above ceiling");
+    let err = w.send(ix, &[&admin]).expect_err("rent fee above ceiling");
+    assert!(err.contains(&custom(RooficError::FeeTooHigh)), "got {err}");
+
+    let ix = w.ix(
+        accounts::AdminOnly { config: w.config, admin: admin.pubkey() }.to_account_metas(None),
+        instruction::SetFees { rent_fee_bps: 0, sale_fee_bps: 2_001 }.data(),
+    );
+    let err = w.send(ix, &[&admin]).expect_err("sale fee above ceiling");
     assert!(err.contains(&custom(RooficError::FeeTooHigh)), "got {err}");
 }
 
@@ -584,6 +591,37 @@ fn rent_accrued_before_a_second_purchase_is_kept() {
     let before = w.token_balance(&w.pay_account(&alice.pubkey()));
     w.claim(&alice).unwrap();
     assert_eq!(w.token_balance(&w.pay_account(&alice.pubkey())) - before, 99 * USDC);
+}
+
+#[test]
+fn mid_cycle_topup_banks_unclaimed_without_diluting_other_holders() {
+    let mut w = world(legacy_token());
+    let (alice, bob, manager) = (alice(&w), bob(&w), w.manager.insecure_clone());
+    w.buy(&alice, 10).unwrap();
+    w.buy(&bob, 10).unwrap();
+
+    let mp = w.manager_pay;
+    w.deposit_rent(&manager, mp, 100 * USDC).unwrap(); // 99 USDC net -> 49.5 USDC each
+
+    w.buy(&alice, 10).unwrap(); // Alice tops up before claiming
+
+    let prop = w.property_state();
+    let alice_pos = w.position(&alice.pubkey()).unwrap();
+    assert_eq!(alice_pos.shares, 20);
+    assert_eq!(alice_pos.unclaimed, 49_500_000, "first-cycle rent banked into unclaimed before debt reset");
+    assert_eq!(
+        alice_pos.reward_debt,
+        (20u128 * prop.acc_rent_per_share) / roofic::ACC_SCALE,
+        "new shares must not claim pre-existing rent"
+    );
+
+    let a_before = w.token_balance(&w.pay_account(&alice.pubkey()));
+    let b_before = w.token_balance(&w.pay_account(&bob.pubkey()));
+    w.claim(&alice).unwrap();
+    w.claim(&bob).unwrap();
+    assert_eq!(w.token_balance(&w.pay_account(&alice.pubkey())) - a_before, 49_500_000);
+    assert_eq!(w.token_balance(&w.pay_account(&bob.pubkey())) - b_before, 49_500_000);
+    assert_eq!(w.token_balance(&w.vault), 0);
 }
 
 #[test]
@@ -972,6 +1010,9 @@ fn claim_rejects_vault_that_does_not_belong_to_the_property() {
     assert_eq!(w.token_balance(&w.vault), vault_before);
     assert_eq!(w.position(&alice.pubkey()).unwrap().total_claimed, 0);
 }
+
+#[test]
+fn buy_rejects_zero_shares() {
     let mut w = world(legacy_token());
     let alice = alice(&w);
     let before = w.token_balance(&w.pay_account(&alice.pubkey()));
@@ -1115,6 +1156,30 @@ fn burning_share_tokens_cannot_steal_other_holders_rent() {
 }
 
 #[test]
+fn burning_half_shares_keeps_monotonic_shares_sold_denominator() {
+    let mut w = world(legacy_token());
+    let (alice, bob, manager) = (alice(&w), bob(&w), w.manager.insecure_clone());
+    w.buy(&alice, 10).unwrap();
+    w.buy(&bob, 10).unwrap();
+
+    // Alice burns half of her NonTransferable shares; property.shares_sold remains 20
+    burn_shares(&mut w, &alice, 5).expect("burn half of alice shares");
+    assert_eq!(w.supply(), 15);
+    assert_eq!(w.property_state().shares_sold, 20);
+
+    let mp = w.manager_pay;
+    w.deposit_rent(&manager, mp, 100 * USDC).expect("deposit");
+
+    let a_before = w.token_balance(&w.pay_account(&alice.pubkey()));
+    let b_before = w.token_balance(&w.pay_account(&bob.pubkey()));
+    w.claim(&alice).expect("alice claims her 10/20 share");
+    w.claim(&bob).expect("bob claims his 10/20 share");
+    assert_eq!(w.token_balance(&w.pay_account(&alice.pubkey())) - a_before, 49_500_000);
+    assert_eq!(w.token_balance(&w.pay_account(&bob.pubkey())) - b_before, 49_500_000);
+    assert_eq!(w.token_balance(&w.vault), 0);
+}
+
+#[test]
 fn burning_share_tokens_cannot_oversell_beyond_total_shares() {
     let mut w = world(legacy_token());
     let (alice, bob) = (alice(&w), bob(&w));
@@ -1224,6 +1289,24 @@ fn revoked_investor_can_still_claim_accrued_rent() {
 
     let before = w.token_balance(&w.pay_account(&alice.pubkey()));
     w.claim(&alice).expect("revoked investor can still withdraw her rent");
+    assert_eq!(w.token_balance(&w.pay_account(&alice.pubkey())) - before, 99 * USDC);
+}
+
+#[test]
+fn paused_and_revoked_investor_can_still_claim_rent() {
+    let mut w = world(legacy_token());
+    let (alice, admin, manager) = (alice(&w), w.admin.insecure_clone(), w.manager.insecure_clone());
+    w.buy(&alice, 10).unwrap();
+
+    let mp = w.manager_pay;
+    w.deposit_rent(&manager, mp, 100 * USDC).unwrap();
+
+    w.set_paused(true, &admin).expect("admin pauses");
+    w.revoke(&alice.pubkey(), &admin).expect("admin revokes alice KYC");
+    assert!(w.buy(&alice, 1).is_err(), "buying blocked while paused and revoked");
+
+    let before = w.token_balance(&w.pay_account(&alice.pubkey()));
+    w.claim(&alice).expect("claim_rent must succeed even when paused AND KYC revoked");
     assert_eq!(w.token_balance(&w.pay_account(&alice.pubkey())) - before, 99 * USDC);
 }
 

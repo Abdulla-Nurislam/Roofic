@@ -55,18 +55,104 @@ function netYield(
 function pyRoundInt(x: number): number {
   const floor = Math.floor(x);
   const diff = x - floor;
-  if (Math.abs(diff - 0.5) < 1e-12) {
-    return floor % 2 === 0 ? floor : floor + 1;
-  }
-  return Math.round(x);
+  if (diff < 0.5) return floor;
+  if (diff > 0.5) return floor + 1;
+  return floor % 2 === 0 ? floor : floor + 1;
 }
 
+const f64Buf = new ArrayBuffer(8);
+const f64View = new DataView(f64Buf);
+
+/** Exact IEEE-754 round-half-to-even at 6 decimal places, matching CPython `round(x, 6)` */
 function pyRound6(x: number): number {
-  return Number(x.toFixed(6));
+  if (x === 0) return 0;
+  f64View.setFloat64(0, x, false);
+  const bits = f64View.getBigUint64(0, false);
+  const neg = bits >> 63n === 1n;
+  const expBits = Number((bits >> 52n) & 0x7ffn);
+  const frac = bits & ((1n << 52n) - 1n);
+
+  let mant: bigint;
+  let e2: number;
+  if (expBits === 0) {
+    mant = frac;
+    e2 = 1 - 1023 - 52;
+  } else {
+    mant = (1n << 52n) | frac;
+    e2 = expBits - 1023 - 52;
+  }
+
+  // |x| * 10^6 = mant * 5^6 * 2^(e2 + 6)
+  const shift = e2 + 6;
+  if (shift < -70) return 0;
+  const num = mant * 15625n;
+  let q: bigint;
+  if (shift >= 0) {
+    q = num << BigInt(shift);
+  } else {
+    const k = BigInt(-shift);
+    q = num >> k;
+    const rem = num & ((1n << k) - 1n);
+    const half = 1n << (k - 1n);
+    if (rem > half || (rem === half && (q & 1n) === 1n)) {
+      q += 1n;
+    }
+  }
+
+  if (q === 0n) return 0;
+  const intPart = q / 1_000_000n;
+  const fracPart = (q % 1_000_000n).toString().padStart(6, "0");
+  return Number(`${neg ? "-" : ""}${intPart}.${fracPart}`);
 }
 
+/** Formats a JS number identically to CPython `json.dumps(float(x))` */
 function pyFloatJson(x: number): string {
-  return Number.isInteger(x) ? `${x}.0` : `${x}`;
+  if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+  const s = x.toString();
+  const neg = s.startsWith("-");
+  const body = neg ? s.slice(1) : s;
+
+  let digits: string;
+  let exp10: number;
+  const eIdx = body.indexOf("e");
+  if (eIdx !== -1) {
+    const mantStr = body.slice(0, eIdx).replace(".", "");
+    exp10 = Number(body.slice(eIdx + 1));
+    digits = mantStr.replace(/0+$/, "") || "0";
+  } else {
+    const dotIdx = body.indexOf(".");
+    if (dotIdx === -1) {
+      digits = body.replace(/0+$/, "") || "0";
+      exp10 = body.length - 1;
+    } else {
+      const intPart = body.slice(0, dotIdx);
+      const fracPart = body.slice(dotIdx + 1);
+      if (intPart !== "0") {
+        const combined = intPart + fracPart;
+        digits = combined.replace(/0+$/, "") || "0";
+        exp10 = intPart.length - 1;
+      } else {
+        const firstNonZero = fracPart.search(/[1-9]/);
+        exp10 = -(firstNonZero + 1);
+        digits = fracPart.slice(firstNonZero).replace(/0+$/, "") || "0";
+      }
+    }
+  }
+
+  const sign = neg ? "-" : "";
+  if (exp10 < -4 || exp10 >= 16) {
+    const mant = digits.length === 1 ? digits : `${digits[0]}.${digits.slice(1)}`;
+    const expSign = exp10 >= 0 ? "+" : "-";
+    const absExp = Math.abs(exp10).toString().padStart(2, "0");
+    return `${sign}${mant}e${expSign}${absExp}`;
+  }
+  if (exp10 < 0) {
+    return `${sign}0.${"0".repeat(-exp10 - 1)}${digits}`;
+  }
+  if (digits.length <= exp10 + 1) {
+    return `${sign}${digits}${"0".repeat(exp10 + 1 - digits.length)}.0`;
+  }
+  return `${sign}${digits.slice(0, exp10 + 1)}.${digits.slice(exp10 + 1)}`;
 }
 
 /** Canonical payload matching `json.dumps(..., sort_keys=True, separators=(",", ":"))` in engine.py */

@@ -106,10 +106,109 @@ describe("scoring.ts", () => {
     assert.equal(rep.valuation_hash_hex.slice(0, 16), "46e7f31ddc9d8c3b");
   });
 
+  test("matches Python engine.py SHA-256 hash on boundary and rounding edge cases", () => {
+    const cases: Array<{ input: PropertyInput; expectedScore: number; expectedPrefix: string }> = [
+      {
+        input: {
+          property_id: 101,
+          name: "Vacancy Stress",
+          city: "Almaty",
+          price_usd: 150_000,
+          gross_yield: 0.095,
+          vacancy_rate: 0.16,
+          opex_ratio: 0.18,
+          manager_fee_ratio: 0.05,
+          platform_rent_fee_bps: 100,
+          platform_sale_fee_bps: 150,
+          building_age_years: 6,
+        },
+        expectedScore: 51,
+        expectedPrefix: "4a740e81bcdd7d13",
+      },
+      {
+        input: {
+          property_id: 102,
+          name: "Old Heritage",
+          city: "Almaty",
+          price_usd: 90_000,
+          gross_yield: 0.09,
+          vacancy_rate: 0.14,
+          opex_ratio: 0.22,
+          manager_fee_ratio: 0.05,
+          platform_rent_fee_bps: 100,
+          platform_sale_fee_bps: 150,
+          building_age_years: 28,
+        },
+        expectedScore: 70,
+        expectedPrefix: "da0e80a9c23f5a9c",
+      },
+      {
+        input: {
+          property_id: 103,
+          name: "Extreme Opex",
+          city: "Astana",
+          price_usd: 100_000,
+          gross_yield: 0.08,
+          vacancy_rate: 0.85,
+          opex_ratio: 0.9,
+          manager_fee_ratio: 0.09,
+          platform_rent_fee_bps: 100,
+          platform_sale_fee_bps: 150,
+          building_age_years: 25,
+        },
+        expectedScore: 95,
+        expectedPrefix: "57bec881c120efb8",
+      },
+      {
+        input: {
+          property_id: 104,
+          name: "Halfway Tie",
+          city: "Shymkent",
+          price_usd: 100_000,
+          gross_yield: 0.125,
+          vacancy_rate: 0.25,
+          opex_ratio: 0.2,
+          manager_fee_ratio: 0.05,
+          platform_rent_fee_bps: 0,
+          platform_sale_fee_bps: 150,
+          building_age_years: 10,
+        },
+        expectedScore: 58,
+        expectedPrefix: "310f439d5a800946",
+      },
+      {
+        input: {
+          property_id: 105,
+          name: "Near Half Risk",
+          city: "Almaty",
+          price_usd: 100_000,
+          gross_yield: 0.095,
+          vacancy_rate: 0.07,
+          opex_ratio: 0.16,
+          manager_fee_ratio: 0.0816666666666667,
+          platform_rent_fee_bps: 100,
+          platform_sale_fee_bps: 150,
+          building_age_years: 4,
+        },
+        expectedScore: 38,
+        expectedPrefix: "cd7a5f5a9d12b9e8",
+      },
+    ];
+    for (const { input, expectedScore, expectedPrefix } of cases) {
+      const rep = evaluateProperty(input);
+      assert.equal(rep.risk_score, expectedScore, input.name);
+      assert.equal(rep.valuation_hash_hex.slice(0, 16), expectedPrefix, input.name);
+    }
+  });
+
   test("rejects NaN, non-finite, negative, and out-of-range inputs", () => {
     const badInputs: Partial<PropertyInput>[] = [
       { price_usd: 0 },
       { vacancy_rate: 1.0 },
+      { gross_yield: 0.5 },
+      { gross_yield: 0.75 },
+      { gross_yield: 0 },
+      { gross_yield: -0.05 },
       { price_usd: Number.NaN },
       { price_usd: Number.POSITIVE_INFINITY },
       { building_age_years: Number.NaN },

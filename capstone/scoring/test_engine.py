@@ -59,6 +59,96 @@ class ScoringEngineTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             evaluate_property(replace(self.sample, vacancy_rate=1.0))
 
+    def test_gross_yield_bounds_rejected(self) -> None:
+        for bad_yield in (0.5, 0.75, 0.0, -0.1):
+            with self.subTest(gross_yield=bad_yield), self.assertRaises(ValueError):
+                evaluate_property(replace(self.sample, gross_yield=bad_yield))
+
+    def test_boundary_reference_hashes_for_typescript_parity(self) -> None:
+        cases = [
+            (
+                PropertyInput(
+                    property_id=101,
+                    name="Vacancy Stress",
+                    city="Almaty",
+                    price_usd=150_000.0,
+                    gross_yield=0.095,
+                    vacancy_rate=0.16,
+                    opex_ratio=0.18,
+                    manager_fee_ratio=0.05,
+                    building_age_years=6,
+                ),
+                51,
+                "4a740e81bcdd7d13",
+            ),
+            (
+                PropertyInput(
+                    property_id=102,
+                    name="Old Heritage",
+                    city="Almaty",
+                    price_usd=90_000.0,
+                    gross_yield=0.09,
+                    vacancy_rate=0.14,
+                    opex_ratio=0.22,
+                    manager_fee_ratio=0.05,
+                    building_age_years=28,
+                ),
+                70,
+                "da0e80a9c23f5a9c",
+            ),
+            (
+                PropertyInput(
+                    property_id=103,
+                    name="Extreme Opex",
+                    city="Astana",
+                    price_usd=100_000.0,
+                    gross_yield=0.08,
+                    vacancy_rate=0.85,
+                    opex_ratio=0.90,
+                    manager_fee_ratio=0.09,
+                    building_age_years=25,
+                ),
+                95,
+                "57bec881c120efb8",
+            ),
+            (
+                PropertyInput(
+                    property_id=104,
+                    name="Halfway Tie",
+                    city="Shymkent",
+                    price_usd=100_000.0,
+                    gross_yield=0.125,
+                    vacancy_rate=0.25,
+                    opex_ratio=0.20,
+                    manager_fee_ratio=0.05,
+                    platform_rent_fee_bps=0,
+                    building_age_years=10,
+                ),
+                58,
+                "310f439d5a800946",
+            ),
+            (
+                PropertyInput(
+                    property_id=105,
+                    name="Near Half Risk",
+                    city="Almaty",
+                    price_usd=100_000.0,
+                    gross_yield=0.095,
+                    vacancy_rate=0.07,
+                    opex_ratio=0.16,
+                    manager_fee_ratio=0.0816666666666667,
+                    building_age_years=4,
+                ),
+                38,
+                "cd7a5f5a9d12b9e8",
+            ),
+        ]
+        for inp, expected_score, expected_prefix in cases:
+            with self.subTest(name=inp.name):
+                rep = evaluate_property(inp)
+                self.assertEqual(rep.risk_score, expected_score)
+                self.assertEqual(rep.valuation_hash_hex[:16], expected_prefix)
+
     def test_non_finite_and_out_of_range_inputs_rejected(self) -> None:
         for override in (
             {"price_usd": float("nan")},
