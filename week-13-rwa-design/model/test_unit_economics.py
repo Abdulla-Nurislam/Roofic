@@ -3,6 +3,7 @@ import unittest
 from dataclasses import replace
 
 from unit_economics import (
+    MAX_FEE_BPS,
     SCENARIOS,
     Assumptions,
     annual_breakdown,
@@ -62,6 +63,27 @@ class WaterfallTests(unittest.TestCase):
     def test_zero_platform_fee_has_no_break_even(self):
         with self.assertRaises(ValueError):
             break_even_properties(replace(Assumptions(), platform_rent_fee_bps=0))
+
+    def test_protocol_fee_cap_and_non_finite_assumptions_rejected(self):
+        # Boundary: 2000 bps (20%) is allowed on-chain; 2001 bps must fail
+        ok = annual_breakdown(
+            replace(Assumptions(), platform_rent_fee_bps=MAX_FEE_BPS, platform_sale_fee_bps=MAX_FEE_BPS)
+        )
+        self.assertGreater(ok["platform_rent_fee"], 0)
+
+        for bad in (
+            dict(platform_rent_fee_bps=MAX_FEE_BPS + 1),
+            dict(platform_sale_fee_bps=MAX_FEE_BPS + 1),
+            dict(platform_rent_fee_bps=-1),
+            dict(platform_sale_fee_bps=-50),
+            dict(platform_fixed_cost_month=-1.0),
+            dict(price=float("nan")),
+            dict(gross_rent_yield=float("inf")),
+            dict(platform_fixed_cost_month=float("nan")),
+            dict(price=True),
+        ):
+            with self.assertRaises(ValueError, msg=str(bad)):
+                annual_breakdown(replace(Assumptions(), **bad))
 
 
 class DistributeTests(unittest.TestCase):
