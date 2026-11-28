@@ -32,7 +32,6 @@ use anchor_spl::token_2022_extensions::{non_transferable_mint_initialize, NonTra
 use anchor_spl::token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked};
 
 pub mod instructions;
-use instructions::*;
 
 declare_id!("EvLmbfYUs5m5YHWm4QWCeQfy63df4BBiaBiZw8Rf12mo");
 
@@ -55,6 +54,8 @@ pub const SHARE_MINT_SEED: &[u8] = b"share_mint";
 pub const VAULT_SEED: &[u8] = b"vault";
 #[constant]
 pub const POSITION_SEED: &[u8] = b"position";
+#[constant]
+pub const RESERVE_VAULT_SEED: &[u8] = b"reserve_vault";
 
 #[program]
 pub mod roofic {
@@ -111,15 +112,67 @@ pub mod roofic {
 
     // --------------------------------------------------------- reserve vault (template)
     pub fn initialize_reserve_vault(ctx: Context<InitializeReserveVault>) -> Result<()> {
-        instructions::initialize_reserve_vault_handler(ctx)
+        let vault = &mut ctx.accounts.reserve_vault;
+        vault.admin = ctx.accounts.admin.key();
+        vault.token_mint = ctx.accounts.payment_mint.key();
+        vault.vault_token_account = ctx.accounts.vault_token_account.key();
+        vault.total_tokens = 0;
+        vault.total_shares = 0;
+        vault.bump = ctx.bumps.reserve_vault;
+        Ok(())
     }
 
-    pub fn deposit_reserve(ctx: Context<DepositReserve>, amount: u64) -> Result<u64> {
-        instructions::deposit_reserve_handler(ctx, amount)
+    pub fn deposit_reserve(ctx: Context<DepositReserve>, amount: u64) -> Result<()> {
+        let shares = instructions::vault_ops::calculate_deposit_shares(
+            amount,
+            ctx.accounts.reserve_vault.total_tokens,
+            ctx.accounts.reserve_vault.total_shares,
+        )?;
+        let decimals = ctx.accounts.payment_mint.decimals;
+
+        pay(
+            &ctx.accounts.payment_token_program,
+            &ctx.accounts.payment_mint,
+            &ctx.accounts.user_token_account,
+            &ctx.accounts.vault_token_account,
+            ctx.accounts.user.to_account_info(),
+            amount,
+            decimals,
+            &[],
+        )?;
+
+        let vault = &mut ctx.accounts.reserve_vault;
+        vault.total_tokens = vault.total_tokens.checked_add(amount).ok_or(RooficError::MathOverflow)?;
+        vault.total_shares = vault.total_shares.checked_add(shares).ok_or(RooficError::MathOverflow)?;
+        Ok(())
     }
 
-    pub fn withdraw_reserve(ctx: Context<WithdrawReserve>, shares_amount: u64) -> Result<u64> {
-        instructions::withdraw_reserve_handler(ctx, shares_amount)
+    pub fn withdraw_reserve(ctx: Context<WithdrawReserve>, shares_amount: u64) -> Result<()> {
+        let tokens_out = instructions::vault_ops::calculate_withdraw_tokens(
+            shares_amount,
+            ctx.accounts.reserve_vault.total_tokens,
+            ctx.accounts.reserve_vault.total_shares,
+        )?;
+        let decimals = ctx.accounts.payment_mint.decimals;
+        let mint_key = ctx.accounts.reserve_vault.token_mint;
+        let bump = ctx.accounts.reserve_vault.bump;
+        let seeds: &[&[u8]] = &[RESERVE_VAULT_SEED, mint_key.as_ref(), &[bump]];
+
+        pay(
+            &ctx.accounts.payment_token_program,
+            &ctx.accounts.payment_mint,
+            &ctx.accounts.vault_token_account,
+            &ctx.accounts.user_token_account,
+            ctx.accounts.reserve_vault.to_account_info(),
+            tokens_out,
+            decimals,
+            &[seeds],
+        )?;
+
+        let vault = &mut ctx.accounts.reserve_vault;
+        vault.total_tokens = vault.total_tokens.checked_sub(tokens_out).ok_or(RooficError::MathOverflow)?;
+        vault.total_shares = vault.total_shares.checked_sub(shares_amount).ok_or(RooficError::MathOverflow)?;
+        Ok(())
     }
 
     // ---------------------------------------------------------------- listing
@@ -670,9 +723,104 @@ pub struct ClaimRent<'info> {
     pub payment_token_program: Interface<'info, TokenInterface>,
 }
 
+#[derive(Accounts)]
+pub struct InitializeReserveVault<'info> {
+    #[account(seeds = [CONFIG_SEED], bump = config.bump, has_one = admin @ RooficError::NotAdmin)]
+    pub config: Account<'info, PlatformConfig>,
+
+    #[account(
+        init,
+        payer = admin,
+        space = 8 + ReserveVault::INIT_SPACE,
+        seeds = [RESERVE_VAULT_SEED, payment_mint.key().as_ref()],
+        bump,
+    )]
+    pub reserve_vault: Account<'info, ReserveVault>,
+
+    #[account(
+        mut,
+        token::mint = payment_mint,
+        token::authority = reserve_vault,
+        token::token_program = payment_token_program,
+    )]
+    pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(address = config.payment_mint, mint::token_program = payment_token_program)]
+    pub payment_mint: InterfaceAccount<'info, Mint>,
+
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    pub payment_token_program: Interface<'info, TokenInterface>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct DepositReserve<'info> {
+    #[account(
+        mut,
+        seeds = [RESERVE_VAULT_SEED, payment_mint.key().as_ref()],
+        bump = reserve_vault.bump,
+    )]
+    pub reserve_vault: Account<'info, ReserveVault>,
+
+    #[account(
+        mut,
+        address = reserve_vault.vault_token_account,
+        token::mint = payment_mint,
+        token::token_program = payment_token_program,
+    )]
+    pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(address = reserve_vault.token_mint, mint::token_program = payment_token_program)]
+    pub payment_mint: InterfaceAccount<'info, Mint>,
+
+    #[account(mut, token::mint = payment_mint, token::authority = user, token::token_program = payment_token_program)]
+    pub user_token_account: InterfaceAccount<'info, TokenAccount>,
+
+    pub user: Signer<'info>,
+    pub payment_token_program: Interface<'info, TokenInterface>,
+}
+
+#[derive(Accounts)]
+pub struct WithdrawReserve<'info> {
+    #[account(
+        mut,
+        seeds = [RESERVE_VAULT_SEED, payment_mint.key().as_ref()],
+        bump = reserve_vault.bump,
+    )]
+    pub reserve_vault: Account<'info, ReserveVault>,
+
+    #[account(
+        mut,
+        address = reserve_vault.vault_token_account,
+        token::mint = payment_mint,
+        token::token_program = payment_token_program,
+    )]
+    pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(address = reserve_vault.token_mint, mint::token_program = payment_token_program)]
+    pub payment_mint: InterfaceAccount<'info, Mint>,
+
+    #[account(mut, token::mint = payment_mint, token::authority = user, token::token_program = payment_token_program)]
+    pub user_token_account: InterfaceAccount<'info, TokenAccount>,
+
+    pub user: Signer<'info>,
+    pub payment_token_program: Interface<'info, TokenInterface>,
+}
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
+#[account]
+#[derive(InitSpace)]
+pub struct ReserveVault {
+    pub admin: Pubkey,
+    pub token_mint: Pubkey,
+    pub vault_token_account: Pubkey,
+    pub total_tokens: u64,
+    pub total_shares: u64,
+    pub bump: u8,
+}
 #[account]
 #[derive(InitSpace)]
 pub struct PlatformConfig {
