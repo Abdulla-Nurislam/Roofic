@@ -506,7 +506,13 @@ export default function CapstonePage() {
         <div className="container header">
           <div className="brand-group">
             <div className="logo">
-              <div className="logo-mark">R</div>
+              <div className="logo-mark">
+                <svg viewBox="120 260 784 500" width="22" height="22" aria-hidden="true">
+                  <polygon points="188,685 511,338 584,416 333,685" fill="#E8E8E6" />
+                  <polygon points="604,437 677,515 604,593 531,515" fill="#E8E8E6" />
+                  <polygon points="697,537 834,685 692,685 624,615" fill="#9A462C" />
+                </svg>
+              </div>
               <span>ROOFIC</span>
             </div>
             <span className="badge neutral">DEVNET · TOKEN-2022</span>
@@ -2331,7 +2337,7 @@ function PropertyCard({
                 </div>
                 <div className="tech-item">
                   <span className="tech-item-label">Доступно к выводу</span>
-                  <span className="tech-item-value" style={{ color: "var(--emerald-light)" }}>
+                  <span className="tech-item-value" style={{ color: "var(--brand-light)" }}>
                     ${formatToken(claimable, paymentDecimals)} USDC
                   </span>
                   <span className="tech-item-sub">

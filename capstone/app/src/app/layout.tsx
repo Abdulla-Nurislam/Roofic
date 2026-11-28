@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   title: "Roofic — RWA Real Estate Protocol on Solana",
   description:
     "SPL Token-2022 NonTransferable property shares, KYC allow-list, USDC rent vault, and SHA-256 risk scoring.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#232728",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
