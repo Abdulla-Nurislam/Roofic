@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -9,6 +9,10 @@ const mono = JetBrains_Mono({ subsets: ["latin", "cyrillic"], variable: "--font-
 export const metadata: Metadata = {
   title: "Roofic RPC Telemetry — Solana Cluster & Portfolio Inspector",
   description: "Direct JSON-RPC cluster telemetry, SPL + Token-2022 portfolio, transaction journal, and program activity.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#232728",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -3,7 +3,7 @@
 export function Sparkline({
   values,
   height = 68,
-  color = "var(--emerald)",
+  color = "var(--brand-vivid)",
 }: {
   values: number[];
   height?: number;
@@ -28,7 +28,7 @@ export function Sparkline({
       aria-label="График TPS"
       style={{ display: "block" }}
     >
-      <polygon points={`0,${height} ${line} ${w},${height}`} fill={color} opacity="0.1" />
+      <polygon points={`0,${height} ${line} ${w},${height}`} fill={color} opacity="0.14" />
       <polyline points={line} fill="none" stroke={color} strokeWidth="1.75" vectorEffect="non-scaling-stroke" />
     </svg>
   );

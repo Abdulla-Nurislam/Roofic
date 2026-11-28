@@ -98,7 +98,7 @@ function ClusterSection({ network }: { network: NetworkId }) {
                 <span className="metric-label">
                   {data.tpsNonVote ? "Пропускная способность (Non-Vote TPS)" : "Пропускная способность (Total TPS)"}
                 </span>
-                <span className="badge emerald">LIVE 15S</span>
+                <span className="badge brand">LIVE 15S</span>
               </div>
               <div className="metric-value lg">{fmt(data.tps, 0)} tx/s</div>
             </div>
@@ -625,10 +625,16 @@ export default function Dashboard() {
         <div className="container header">
           <div className="brand-group">
             <div className="logo">
-              <div className="logo-mark">R</div>
+              <div className="logo-mark">
+                <svg viewBox="120 260 784 500" width="22" height="22" aria-hidden="true">
+                  <polygon points="188,685 511,338 584,416 333,685" fill="#E8E8E6" />
+                  <polygon points="604,437 677,515 604,593 531,515" fill="#E8E8E6" />
+                  <polygon points="697,537 834,685 692,685 624,615" fill="#9A462C" />
+                </svg>
+              </div>
               <span>ROOFIC</span>
             </div>
-            <span className="badge emerald">RPC TELEMETRY</span>
+            <span className="badge brand">RPC TELEMETRY</span>
           </div>
 
           <nav className="nav-links" aria-label="Секции дашборда">
